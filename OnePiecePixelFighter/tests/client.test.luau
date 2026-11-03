@@ -373,4 +373,22 @@ T.test("online 1v1 against the real server services through mock remotes", funct
 	frames(5)
 end)
 
+T.test("PC keys: 1/2/3/4 attacks, F awakening, left click light", function()
+	local IC = H.require("StarterPlayer.StarterPlayerScripts.Controllers.InputController")
+	local Input = H.require("ReplicatedStorage.Shared.Sim.Input")
+	IC.takePresses(1)
+	for key, bit in
+		{ [K.One] = Input.LIGHT, [K.Two] = Input.MEDIUM, [K.Three] = Input.HEAVY, [K.Four] = Input.SPECIAL, [K.F] = Input.SUPER }
+	do
+		Mock.press(key)
+		T.eq(bit32.band(IC.takePresses(1), bit), bit, tostring(key))
+		T.eq(bit32.band(IC.held(1), bit), bit, tostring(key) .. " held")
+		Mock.release(key)
+	end
+	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Unknown }, false)
+	T.eq(bit32.band(IC.takePresses(1), Input.LIGHT), Input.LIGHT, "left click")
+	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Unknown }, true)
+	T.eq(IC.takePresses(1), 0, "clicks on GUI buttons are not attacks")
+end)
+
 return T

@@ -30,18 +30,18 @@ CharacterSelect.__index = CharacterSelect
 local PREVIEW_W, PREVIEW_H = 170, 150
 local CYCLE = { "Idle", "Walk", "StandLight", "StandMedium", "StandHeavy", "CrouchHeavy", "AirHeavy", "Special", "Super", "Victory" }
 local INPUT_NAMES = {
-	StandLight = "J",
-	StandMedium = "K",
-	StandHeavy = "L",
-	CrouchLight = "S+J",
-	CrouchMedium = "S+K",
-	CrouchHeavy = "S+L",
-	AirLight = "air J",
-	AirMedium = "air K",
-	AirHeavy = "air L",
-	Special = "U",
-	Special2 = "S+U",
-	Super = "I (100%)",
+	StandLight = "1",
+	StandMedium = "2",
+	StandHeavy = "3",
+	CrouchLight = "S+1",
+	CrouchMedium = "S+2",
+	CrouchHeavy = "S+3",
+	AirLight = "air 1",
+	AirMedium = "air 2",
+	AirHeavy = "air 3",
+	Special = "4",
+	Special2 = "S+4",
+	Super = "F (100%)",
 	Counter = "(auto)",
 }
 local MOVE_ORDER = {
@@ -405,7 +405,7 @@ function CharacterSelect.refresh(self: any)
 	local stageName = Stage.List[self.stageIndex]
 	self.stageLabel.Text = "STAGE: " .. string.upper(stageName == "SkyIsland" and "SKY ISLAND" or stageName)
 	local hints = {
-		versus = if self.phase == "p1" then "P1: A/D/W/S + J to pick" else "P2: arrows + N (or P1 keys) to pick",
+		versus = if self.phase == "p1" then "P1: A/D/W/S + 1 (or click) to pick" else "P2: arrows + N (or P1 keys) to pick",
 		training = if self.phase == "p1" then "Pick your fighter" else "Pick the training dummy",
 		online = "Pick your fighter, then FIND MATCH",
 		inspect = "Browse the roster. Previews show each fighter's attacks.",

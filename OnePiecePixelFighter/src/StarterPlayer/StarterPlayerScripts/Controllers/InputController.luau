@@ -1,8 +1,9 @@
 --!strict
 -- Keyboard, gamepad and touch -> per-player input bits.
 --
--- PLAYER 1 (keyboard)      A/D move  W jump  S crouch  SPACE dash (or double-tap)
---                          J light  K medium  L heavy  U special  I super  SHIFT block
+-- PLAYER 1 (keyboard+mouse) A/D move  W jump  S crouch  SPACE dash (or double-tap)  SHIFT block
+--                          1 light  2 medium  3 heavy  4 special  F awakening (super)
+--                          left mouse button = light   (J/K/L/U/I also work)
 -- PLAYER 2 (local only)    arrows move/jump/crouch  RIGHT CTRL dash
 --                          N light  M medium  , heavy  . special  / super  RIGHT SHIFT block
 --                          (numpad 1/2/3 light/medium/heavy, 4 special, 5 super, 0 block also work)
@@ -28,6 +29,11 @@ local KEYS = {
 		[K.L] = Input.HEAVY,
 		[K.U] = Input.SPECIAL,
 		[K.I] = Input.SUPER,
+		[K.One] = Input.LIGHT,
+		[K.Two] = Input.MEDIUM,
+		[K.Three] = Input.HEAVY,
+		[K.Four] = Input.SPECIAL,
+		[K.F] = Input.SUPER,
 		[K.LeftShift] = Input.BLOCK,
 		[K.Space] = Input.DASH,
 	},
@@ -126,6 +132,9 @@ function InputController.start()
 				end
 			elseif io.UserInputType == Enum.UserInputType.Touch then
 				lastDevice = "touch"
+			elseif io.UserInputType == Enum.UserInputType.MouseButton1 and not processed then
+				-- left click = light attack (clicks on GUI buttons are "processed" and ignored)
+				presses[1] = bit32.bor(presses[1], Input.LIGHT)
 			end
 		end
 	end)

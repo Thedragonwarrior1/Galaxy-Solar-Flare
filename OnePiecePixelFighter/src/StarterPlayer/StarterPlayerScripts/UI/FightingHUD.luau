@@ -314,7 +314,7 @@ function FightingHUD.update(self: any, view: any)
 		s.mfill.Size = UDim2.fromScale(meter, 1)
 		local full = meter >= 1
 		s.mfill.BackgroundColor3 = if full then (if (view.frame // 6) % 2 == 0 then C.meterFull else C.meter) else C.meter
-		s.mtext.Text = if full then "SUPER READY" else string.format("SUPER %d%%", math.floor(meter * 100))
+		s.mtext.Text = if full then "AWAKENING READY [F]" else string.format("SUPER %d%%", math.floor(meter * 100))
 		-- the combo counter shows on the attacker's side (hits the opponent has taken)
 		local opp = view.fighters[3 - i]
 		if opp.combo >= 2 then

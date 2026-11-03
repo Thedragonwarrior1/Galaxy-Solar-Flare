@@ -62,20 +62,24 @@ function MainMenu.new(gui: ScreenGui, actions: Actions)
 		local b = Widgets.button(list, it[1], { Size = UDim2.fromScale(1, 0.21), LayoutOrder = i, ZIndex = 32 }, it[2])
 		table.insert(buttons, b)
 	end
-	Widgets.text(root, "DEMO MATCH  -  CLICK A MODE BELOW TO PLAY  (OR W/S + J / ENTER)", {
+	Widgets.text(root, "DEMO MATCH  -  CLICK A MODE BELOW TO PLAY  (OR W/S + ENTER)", {
 		Size = UDim2.fromScale(0.7, 0.04),
 		Position = UDim2.fromScale(0.5, 0.31),
 		AnchorPoint = Vector2.new(0.5, 0),
 		TextColor3 = C.gold,
 		ZIndex = 31,
 	})
-	Widgets.text(root, "MOVE A/D  JUMP W  CROUCH S  DASH SPACE  BLOCK SHIFT  J/K/L LIGHT/MED/HEAVY  U SPECIAL  I SUPER  P PAUSE", {
-		Size = UDim2.fromScale(0.94, 0.035),
-		Position = UDim2.fromScale(0.5, 0.95),
-		AnchorPoint = Vector2.new(0.5, 1),
-		TextColor3 = C.white,
-		ZIndex = 31,
-	})
+	Widgets.text(
+		root,
+		"MOVE A/D  JUMP W  CROUCH S  DASH SPACE  BLOCK SHIFT  1/2/3 (OR CLICK) LIGHT/MED/HEAVY  4 SPECIAL  F AWAKENING  P PAUSE",
+		{
+			Size = UDim2.fromScale(0.94, 0.035),
+			Position = UDim2.fromScale(0.5, 0.95),
+			AnchorPoint = Vector2.new(0.5, 1),
+			TextColor3 = C.white,
+			ZIndex = 31,
+		}
+	)
 	return setmetatable({ root = root, buttons = buttons, cursor = 1, items = items }, MainMenu)
 end
 

@@ -57,20 +57,20 @@ To test the fallback in Studio, set `Canvas.ForceGui = true` in `StarterPlayerSc
 | Jump | W | ↑ | A or up | JMP / up |
 | Crouch | S | ↓ | Down | Down |
 | Dash | Space, or double-tap a direction | Right Ctrl | R3, or double-tap | DASH, or double-tap |
-| Light | J | N (Num 1) | X | L |
-| Medium | K | M (Num 2) | Y | M |
-| Heavy | L | , (Num 3) | RB | H |
-| Special | U | . (Num 4) | B | SP |
-| Super (full meter) | I | / (Num 5) | RT | SU |
+| Light | 1 or left click (J) | N (Num 1) | X | L |
+| Medium | 2 (K) | M (Num 2) | Y | M |
+| Heavy | 3 (L) | , (Num 3) | RB | H |
+| Special | 4 (U) | . (Num 4) | B | SP |
+| Awakening / Super (full meter) | F (I) | / (Num 5) | RT | SU |
 | Block | Left Shift | Right Shift (Num 0) | LB / LT | BLK |
 | Pause (local modes) | P | – | Start | – |
 | Training: hitboxes / dummy / reset | H / T / R | | | panel buttons |
 
 **Command variants:**
 
-- Down + Special is **Mantra Step** for Enel and **Mochi Flurry** for Katakuri.
-- Holding Special charges **Gear 4's Kong Gun**.
-- Special with 25+ meter is **Gear 5's EX Toon Bounce**.
+- Down + Special (S + 4) is **Mantra Step** for Enel and **Mochi Flurry** for Katakuri.
+- Holding Special (4) charges **Gear 4's Kong Gun**.
+- Special (4) with 25+ meter is **Gear 5's EX Toon Bounce**.
 - Gear 5 can double jump.
 
 **Blocking:** hold Block to stand-guard and Block + Down to crouch-guard. Lows must be crouch-blocked; overheads (all jump attacks and Gear 4's Kong Hammer) must be stand-blocked.
