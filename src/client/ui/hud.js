@@ -23,6 +23,7 @@ export class Hud {
     this.match = match;
     const view = match.view;
     this.el = h('div.hud.screen.passthru');
+    if (app.settings.touch === 'on' || (app.settings.touch === 'auto' && app.isTouch)) this.el.classList.add('touch');
     this.top = h('div.hud-top', h('div.hud-mode', modeLabel(view, match)), this.timerEl = h('div.hud-timer', '0:00'));
     this.bottom = h('div.hud-bottom');
     this.tags = h('div');
@@ -64,7 +65,7 @@ export class Hud {
   update(dt, view) {
     // timer
     const t = view.timed ? view.timer : view.elapsed || 0;
-    this.timerEl.textContent = view.training ? 'TRAINING' : fmtTime(view.timed ? t : (view.elapsed || view.frame));
+    this.timerEl.textContent = view.training ? 'TRAINING' : fmtTime(view.timed ? (view.phase === 'countdown' ? view.cfg.time * 60 : t) : (view.elapsed || 0));
     this.timerEl.classList.toggle('low', !!view.timed && view.timer < 600 && view.phase === 'play');
     // countdown banner
     if (view.phase === 'countdown') {
@@ -181,7 +182,7 @@ export class Hud {
     const hbBtn = h('button.ghost', { onclick: () => { this.showHit = !this.showHit; hbBtn.classList.toggle('on', this.showHit); app.renderer.showHitboxes = this.showHit; } }, 'Show hitboxes');
     const ultBtn = h('button.ghost', { onclick: () => { this.infUlt = !this.infUlt; ultBtn.classList.toggle('on', this.infUlt); } }, 'Infinite ultimate');
     const panel = h('div.train.panel.interactive',
-      h('h4', 'Training'),
+      h('h4', { onclick: () => panel.classList.toggle('collapsed') }, 'Training'),
       h('div.r', h('span', 'Dummy'), sel([['stand', 'Stand'], ['shield', 'Shield'], ['jump', 'Jump'], ['move', 'Walk'], ['cpu', 'Fight back (CPU)']], 'stand', (v) => setDummy(v))),
       h('div.r', h('span', 'CPU level'), sel([1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [String(n), String(n)]), '5', (v) => setDummy(m.cpus.get(dummy.id).mode, +v))),
       h('div.r', h('span', 'Dummy %'), pctIn, pctLbl),
@@ -190,6 +191,7 @@ export class Hud {
       h('div', { style: { marginTop: '8px', color: '#a9b2d6', fontSize: '12px' } }, 'Practice recovery: walk off the stage edge and use R. Esc = pause.'),
     );
     this.el.appendChild(panel);
+    if (this.el.classList.contains('touch')) panel.classList.add('collapsed');
     this.trainPanel = panel;
     this._tkey = (e) => { if (e.code === 'KeyT' && this.match === app.match) { view.resetPositions(); app.renderer.captureStep(view); app.renderer.captureStep(view); } };
     window.addEventListener('keydown', this._tkey);
@@ -209,7 +211,7 @@ export class Hud {
       const kb = hb ? Math.round(computeKnockback(d.pct + hb.dmg, hb.dmg, d.st.weight, hb.bkb || 0, hb.kbg ?? 100, hb.setKb)) : 0;
       const lh = this.lastHit;
       this.fdata.innerHTML = '';
-      this.fdata.append(
+      this.fdata.append(...[
         h('div', h('b', info.name), ` (${info.key})`),
         h('div', `Startup: ${info.startup ?? '-'}f  Active: ${info.active}`),
         h('div', `Total: ${info.total}f  Damage: ${info.dmg}%`),
@@ -217,7 +219,7 @@ export class Hud {
         mv.cooldown ? h('div', `Cooldown: ${(mv.cooldown / 60).toFixed(1)}s`) : null,
         lh ? h('div', `Last hit: ${lh.e.dmg.toFixed(1)}%  launch ${Math.round(lh.e.kb)}  combo ${lh.e.combo}`) : null,
         h('div', `Dummy: ${Math.round(d.pct)}%  state ${d.state}`),
-      );
+      ].filter(Boolean));
     }
   }
 

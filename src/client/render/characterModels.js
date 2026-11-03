@@ -498,8 +498,14 @@ export class FighterModel {
     // team ring under the fighter (also used for player colour)
     this.indicatorColor = new THREE.Color(teamColor || 0xffffff);
 
-    this.root.traverse((o) => { if (o.isMesh && !o.userData.isOutline) o.castShadow = true; });
-    this.limbGroup.traverse((o) => { if (o.isMesh && !o.userData.isOutline) o.castShadow = true; });
+    // only meaningful parts cast shadows (keeps the shadow pass cheap)
+    const caster = (o) => {
+      if (!o.isMesh || o.userData.isOutline) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      o.castShadow = o.geometry.boundingSphere.radius > 0.09 && !o.material.transparent;
+    };
+    this.root.traverse(caster);
+    this.limbGroup.traverse((o) => { if (o.isMesh && !o.userData.isOutline) o.castShadow = o.parent === this.limbGroup; });
     this.expr = 'normal';
     this.blinkT = 2 + Math.random() * 3;
   }

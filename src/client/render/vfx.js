@@ -231,7 +231,7 @@ export class VFX {
   }
 
   ring(x, y, z, { color = 0xffffff, r0 = 0.3, r1 = 3, life = 0.35, flat = true, thick = 0.18, opacity = 0.9, normal } = {}) {
-    const geo = new THREE.RingGeometry(0.82, 1, 48);
+    const geo = new THREE.RingGeometry(flat ? 0.84 : 0.92, 1, 48);
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(1.8), transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
@@ -302,7 +302,7 @@ export class VFX {
     if (e.el === 'slash') this.slashArc(e.x, e.y, e.z, Math.random() * Math.PI, c1, 0.9 + e.dmg * 0.04, 0.16, (Math.random() - 0.5) * 1.5);
     if (e.el === 'spatial') { this.ring(e.x, e.y, e.z, { color: 0x3ee0d0, flat: false, r1: 1.8, life: 0.3 }); this.burst(e.x, e.y, e.z, { count: 12, speed: 6, color: 0xbff8ff, color1: 0x3ee0d0, size: 0.25, life: 0.4 }); }
     if (big) this.ring(e.x, e.y, e.z, { color: c0, flat: false, r1: 2.6 + e.dmg * 0.05, life: 0.3 });
-    if (e.deadly) { this.ring(e.x, e.y, e.z, { color: 0xffffff, flat: false, r1: 6, life: 0.45, opacity: 1 }); this.burst(e.x, e.y, e.z, { count: 40, speed: 16, color: 0xffffff, color1: tint, size: 0.4, life: 0.6 }); }
+    if (e.deadly) { this.ring(e.x, e.y, e.z, { color: 0xfff3b0, flat: false, r1: 3.6, life: 0.32, opacity: 0.55 }); this.burst(e.x, e.y, e.z, { count: 40, speed: 16, color: 0xffffff, color1: tint, size: 0.4, life: 0.6 }); }
   }
 
   shieldHit(e) { this.flash(e.x, e.y, e.z, { color: 0x9ad1ff, r1: 0.8, life: 0.12 }); this.sparkBurst(e.x, e.y, e.z, 0x9ad1ff, 6, 6); }
@@ -426,7 +426,7 @@ export class VFX {
         fragmentShader: `uniform vec3 uColor; uniform float uT; uniform float uA; varying vec3 vN; varying vec3 vV; varying vec3 vP;
           void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 2.5);
             float grid = step(0.94, fract(vP.y * 1.6 + uT * 0.4)) + step(0.96, fract(atan(vP.z, vP.x) * 4.0));
-            gl_FragColor = vec4(uColor * (1.5 + grid), (f * 0.75 + grid * 0.25 + 0.04) * uA); }`,
+            gl_FragColor = vec4(uColor * (0.75 + grid * 0.8), (f * 0.42 + grid * 0.12 + 0.015) * uA); }`,
         transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
       });
       const m = new THREE.Mesh(new THREE.SphereGeometry(r, 40, 24, 0, Math.PI * 2, 0, Math.PI / 2), mat);
@@ -486,9 +486,11 @@ export class VFX {
       return { obj: g, update(zz) { cg.rotation.y += 0.01; cg.position.y = (zz.h || 4.8) + 0.4 + Math.sin(zz.age * 0.05) * 0.15; if (Math.random() < 0.05) { const a = new THREE.Vector3(zz.x + (Math.random() - 0.5) * 2, zz.y + zz.h + 0.2, zz.z + (Math.random() - 0.5) * 1.4); self.bolt(a, a.clone().add(new THREE.Vector3((Math.random() - 0.5), -1.2, (Math.random() - 0.5))), 0xfff27a, 0.12, 0.05, 0.4); } }, dispose() { cloudMat.dispose(); } };
     }
     if (kind === 'tornado') {
-      const cone = new THREE.Mesh(new THREE.CylinderGeometry(z.r, z.r * 0.3, z.h || 7, 24, 6, true), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbfd7ff).multiplyScalar(1.3), transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, wireframe: true }));
+      const swirl = document.createElement('canvas'); swirl.width = 64; swirl.height = 256; { const g = swirl.getContext('2d'); for (let i = 0; i < 14; i++) { g.strokeStyle = `rgba(220,235,255,${0.25 + Math.random() * 0.5})`; g.lineWidth = 2 + Math.random() * 5; g.beginPath(); const y = Math.random() * 256; g.moveTo(0, y); g.bezierCurveTo(20, y - 30, 44, y + 30, 64, y - 10); g.stroke(); } }
+      const tex = new THREE.CanvasTexture(swirl); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(4, 1);
+      const cone = new THREE.Mesh(new THREE.CylinderGeometry(z.r, z.r * 0.3, z.h || 7, 32, 1, true), new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(0xbfd7ff).multiplyScalar(1.1), transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       cone.position.y = (z.h || 7) / 2; g.add(cone);
-      return { obj: g, update(zz) { cone.rotation.y += 0.35; cone.material.opacity = 0.35 * Math.min(1, (zz.life - zz.age) / 10);
+      return { obj: g, update(zz) { cone.rotation.y += 0.35; cone.material.map.offset.y -= 0.03; cone.material.opacity = 0.45 * Math.min(1, (zz.life - zz.age) / 10);
         for (let i = 0; i < 3; i++) { const a = Math.random() * Math.PI * 2, h = Math.random() * (zz.h || 7), r = zz.r * (0.3 + h / (zz.h || 7) * 0.7); self.add.spawn({ x: zz.x + Math.cos(a) * r, y: zz.y + h, z: zz.z + Math.sin(a) * r, vx: -Math.sin(a) * 9, vy: 3, vz: Math.cos(a) * 9, color: 0xe0f0ff, color1: 0x6c8cff, size: 0.35, life: 0.4 }); }
         if (Math.random() < 0.15) { const b = new THREE.Vector3(zz.x, zz.y + zz.h, zz.z); self.bolt(b, b.clone().add(new THREE.Vector3((Math.random() - 0.5) * zz.r * 2, -zz.h * 0.8, (Math.random() - 0.5) * zz.r * 2)), 0xfff27a, 0.12, 0.12, 0.8); } } };
     }

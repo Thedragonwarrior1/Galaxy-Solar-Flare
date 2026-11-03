@@ -187,7 +187,7 @@ export class App {
     const r = this.renderer;
     if (m.net) return this.updateNetMatch(dt);
     const w = m.world;
-    if (!m.paused) {
+    if (!m.paused && !this.manualStep) {
       if (m.slowT > 0) { m.slowT -= dt; m.timeScale = m.slowT > 0 ? 0.3 : 1; }
       m.acc += dt * m.timeScale;
       let steps = 0;
@@ -195,6 +195,7 @@ export class App {
       while (m.acc >= DT && steps < 4) {
         m.acc -= DT;
         const inputs = this.localInputs(m);
+        this.input.endStep();
         w.step(inputs);
         r.captureStep(w);
         events.push(...w.events);
@@ -208,6 +209,28 @@ export class App {
     const orbit = m.opts.locals.length ? this.input.orbit(m.opts.locals[0].device) : 0;
     r.renderMatch(dt, m.paused ? 1 : Math.min(1, m.acc / DT), w, { orbit: m.paused ? 0 : orbit });
     if (this.hud) this.hud.update(dt, w);
+  }
+
+  /**
+   * Test/debug hook: advance the local match by n sim frames. p1 = input for local player 1 ({mx, mz, b}) or a
+   * function (i) => input. Used by automated browser tests on slow software-GPU machines.
+   */
+  advance(n, p1 = NEUTRAL) {
+    const m = this.match;
+    if (!m || m.net) return;
+    this.manualStep = true;
+    const w = m.world;
+    const events = [];
+    for (let i = 0; i < n; i++) {
+      const inputs = w.fighters.map((f) => (m.opts.locals.some((l) => l.slot === f.id) ? (typeof p1 === 'function' ? p1(i, w) : p1) : (m.cpus.get(f.id) ? m.cpus.get(f.id).think() : NEUTRAL)));
+      w.step(inputs);
+      this.renderer.captureStep(w);
+      events.push(...w.events);
+      this.moveCues(w);
+    }
+    if (events.length) this.onEvents(events, w);
+    if (w.phase === 'ended' && !m.ended) { m.ended = true; setTimeout(() => this.finishLocal(m), 50); }
+    return { frame: w.frame, phase: w.phase };
   }
 
   moveCues(w) {
@@ -288,6 +311,7 @@ export class App {
     while (m.inputAcc >= DT && sends < 4) {
       m.inputAcc -= DT;
       const inp = m.paused || this.overlay ? NEUTRAL : this.input.frame('any', r.inputBasis());
+      this.input.endStep();
       m.client.input(inp);
       sends++;
     }

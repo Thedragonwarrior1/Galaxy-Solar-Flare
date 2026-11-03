@@ -182,7 +182,7 @@ export class GameRenderer {
     this.rig.snap = true;
   }
 
-  endMatch() { this.clearFighters(); this.vfx.clearAll(); this.view = null; }
+  endMatch() { this.clearFighters(); this.vfx.clearAll(); this.view = null; this.showHitboxes = false; if (this.hbGroup) this.hbGroup.visible = false; }
 
   /** Call after every sim step (local play) so frames can interpolate between steps. */
   captureStep(view) {
@@ -297,6 +297,7 @@ export class GameRenderer {
       }
       this.trails(v, f, dt);
     }
+    this.drawHitboxes(view);
     for (const p of view.projectiles) V.projectile(p, dt, view.fighters[p.owner]);
     for (const z of view.zones) V.zone(z, dt, view);
     for (const h of view.hazards || []) V.hazardWarn(h);
@@ -307,6 +308,38 @@ export class GameRenderer {
     this.rig.update(dt, focus, cine);
     this.renderer.toneMappingExposure = cine ? 0.82 : (view.phase === 'ending' ? 1.08 : 1.0);
     this.draw();
+  }
+
+  /** Training aid: draw active hitboxes (red) and hurtboxes (blue) from the local sim. */
+  drawHitboxes(view) {
+    const on = this.showHitboxes && typeof view.collectHitboxes === 'function';
+    if (!this.hbGroup) {
+      if (!on) return;
+      this.hbGroup = new THREE.Group();
+      this.hbGroup.renderOrder = 9;
+      this.scene.add(this.hbGroup);
+      this.hbSphere = new THREE.SphereGeometry(1, 14, 10);
+      this.hbMat = new THREE.MeshBasicMaterial({ color: 0xff2040, transparent: true, opacity: 0.35, depthTest: false });
+      this.hurtMat = new THREE.MeshBasicMaterial({ color: 0x3fa7ff, transparent: true, opacity: 0.18, depthTest: false, wireframe: true });
+      this.hbPool = [];
+    }
+    this.hbGroup.visible = on;
+    if (!on) return;
+    const list = view.collectHitboxes();
+    let k = 0;
+    const get = (mat) => { let m = this.hbPool[k]; if (!m) { m = new THREE.Mesh(this.hbSphere, mat); this.hbPool.push(m); this.hbGroup.add(m); } m.material = mat; m.visible = true; k++; return m; };
+    for (const hb of list) {
+      const m = get(this.hbMat);
+      m.position.set(hb.x, hb.y + (hb.shape === 'cyl' ? hb.h / 2 : 0), hb.z);
+      m.scale.set(hb.r, hb.shape === 'cyl' ? hb.h / 2 : hb.r, hb.r);
+    }
+    for (const f of view.fighters) {
+      if (f.state === 'dead') continue;
+      const m = get(this.hurtMat);
+      m.position.set(f.pos.x, f.pos.y + f.height / 2, f.pos.z);
+      m.scale.set(f.radius, f.height / 2, f.radius);
+    }
+    for (let i = k; i < this.hbPool.length; i++) this.hbPool[i].visible = false;
   }
 
   decorate(v, f, pos, view, dt) {

@@ -117,11 +117,11 @@ export function charSelect(app, params) {
     // continue button
     const allIn = slots.every((s) => s.char);
     actions.innerHTML = '';
-    actions.append(
+    actions.append(...[
       h('span.status', allIn ? 'Everyone is ready!' : 'Click a fighter (or Enter / A). Click your card to change.'),
       mode !== 'training' ? h('button.ghost.focusable', { onclick: () => { for (const s of slots) if (s.type === 'cpu') s.char = pick(CHARACTER_IDS); app.sfx('ui_move'); refresh(); } }, 'Shuffle CPUs') : null,
       h('button.cta.focusable', { disabled: !allIn, onclick: proceed }, mode === 'tournament' ? 'TO THE BRACKET ›' : 'CHOOSE ARENA ›'),
-    );
+    ].filter(Boolean));
   }
 
   function proceed() {

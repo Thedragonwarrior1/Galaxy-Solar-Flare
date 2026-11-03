@@ -5,6 +5,7 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
   const p = await b.newPage({ viewport: { width: +(w || 1280), height: +(hh || 720) } });
   const logs = [];
+  if (process.env.QUALITY) await p.addInitScript((q) => { try { localStorage.setItem('grandbrawl.settings.v1', JSON.stringify({ quality: q, resolution: q === 'low' ? 0.6 : 1, music: 0, sfx: 0 })); } catch (e) {} }, process.env.QUALITY);
   p.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text()); });
   p.on('pageerror', (e) => logs.push('pageerror: ' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 4).join('\n')));
   await p.goto(url);

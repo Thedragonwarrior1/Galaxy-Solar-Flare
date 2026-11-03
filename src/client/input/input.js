@@ -22,6 +22,7 @@ const ACTION_BTN = { jump: BTN.JUMP, attack: BTN.ATTACK, heavy: BTN.HEAVY, sp1: 
 export class InputManager {
   constructor() {
     this.keys = new Set();
+    this.tapped = new Set(); // keys pressed since the last sim poll (so sub-frame taps are never lost)
     this.pressedOnce = new Set(); // edges for menu navigation
     this.bindings = JSON.parse(JSON.stringify(DEFAULT_KEYS));
     this.padBindings = JSON.parse(JSON.stringify(DEFAULT_PAD));
@@ -35,7 +36,7 @@ export class InputManager {
     on(window, 'keydown', (e) => {
       if (this.capture) { e.preventDefault(); this.capture(e.code); this.capture = null; return; }
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
-      if (!this.keys.has(e.code)) this.pressedOnce.add(e.code);
+      if (!this.keys.has(e.code)) { this.pressedOnce.add(e.code); this.tapped.add(e.code); }
       this.keys.add(e.code);
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
     });
@@ -45,6 +46,7 @@ export class InputManager {
       if (this.capture) { e.preventDefault(); this.capture('Mouse' + e.button); this.capture = null; return; }
       if (e.target && e.target.closest && e.target.closest('.ui-layer button, .ui-layer input, .ui-layer select, .touch-controls')) return;
       this.keys.add('Mouse' + e.button);
+      this.tapped.add('Mouse' + e.button);
     });
     on(window, 'mouseup', (e) => { this.keys.delete('Mouse' + e.button); });
     on(window, 'contextmenu', (e) => { if (e.target && e.target.classList && e.target.classList.contains('game-canvas')) e.preventDefault(); });
@@ -54,7 +56,10 @@ export class InputManager {
 
   setBindings(b) { if (b) this.bindings = { ...JSON.parse(JSON.stringify(DEFAULT_KEYS)), ...b }; }
 
-  down(action) { const ks = this.bindings[action] || []; for (const k of ks) if (this.keys.has(k)) return true; return false; }
+  down(action) { const ks = this.bindings[action] || []; for (const k of ks) if (this.keys.has(k) || this.tapped.has(k)) return true; return false; }
+
+  /** Call once after all local players' inputs for a sim step were read. */
+  endStep() { this.tapped.clear(); if (this.touch.tapped) this.touch.tapped = 0; }
 
   pads() {
     const list = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
@@ -87,7 +92,7 @@ export class InputManager {
       for (const a in ACTION_BTN) if (this.down(a)) b |= ACTION_BTN[a];
     }
     if (this.enabled && useTouch && this.touch.active) {
-      sx += this.touch.mx; sy += this.touch.my; b |= this.touch.b;
+      sx += this.touch.mx; sy += this.touch.my; b |= this.touch.b | (this.touch.tapped || 0);
     }
     if (this.enabled && padIdx >= 0) {
       const p = this.padState(padIdx);
@@ -195,7 +200,7 @@ export class TouchControls {
     window.addEventListener('touchcancel', end);
     for (const b of el.querySelectorAll('.tc-btn')) {
       const bit = BTN[b.dataset.b];
-      const press = (e) => { e.preventDefault(); input.touch.active = true; input.touch.b |= bit; b.classList.add('on'); };
+      const press = (e) => { e.preventDefault(); input.touch.active = true; input.touch.b |= bit; input.touch.tapped = (input.touch.tapped || 0) | bit; b.classList.add('on'); };
       const rel = (e) => { e.preventDefault(); input.touch.b &= ~bit; b.classList.remove('on'); };
       b.addEventListener('touchstart', press, { passive: false });
       b.addEventListener('touchend', rel, { passive: false });

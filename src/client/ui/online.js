@@ -67,7 +67,7 @@ export function onlineScreen(app) {
     const seg = (opts, cur, on, enabled) => h('div.seg', ...opts.map(([v, l]) => h('button.focusable', { class: v === cur ? 'on' : '', disabled: !enabled, onclick: () => { app.sfx('ui_move'); on(v); } }, l)));
     const st = room.settings;
     const set = (k) => (v) => net.settings({ ...st, [k]: v });
-    right.append(h('div.panel-h', 'Rules' + (isHost ? '' : ' (host decides)')),
+    right.append(...[h('div.panel-h', 'Rules' + (isHost ? '' : ' (host decides)')),
       h('div.rule', h('label', 'Mode'), seg([['ffa', 'Free for all'], ['1v1', '1v1'], ['2v2', '2v2']], st.mode, set('mode'), isHost)),
       h('div.rule', h('label', 'Arena'), seg([['random', 'Random'], ...ARENA_IDS.map((a) => [a, ARENAS[a].name])], st.arena, set('arena'), isHost)),
       h('div.rule', h('label', 'Stocks'), seg([[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], st.stocks, set('stocks'), isHost)),
@@ -81,7 +81,7 @@ export function onlineScreen(app) {
         !isHost && room.state === 'lobby' ? h('button.cta.focusable', { onclick: () => { app.sfx('ready'); net.ready(!(me && me.ready)); } }, me && me.ready ? 'UNREADY' : 'READY') : null,
         isHost && room.state === 'lobby' ? h('button.cta.focusable', { onclick: () => { app.sfx('ui_start'); net.start(); } }, 'START MATCH') : null,
       ),
-    );
+    ].filter(Boolean));
     if (me && me.char) app.renderer.setLineup(room.players.filter((p) => p.char).map((p, i) => ({ char: p.char, color: room.settings.mode === '2v2' ? TEAM_COLORS[p.team % 2] : PLAYER_COLORS[i % 4] })));
   }
 

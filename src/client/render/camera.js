@@ -43,7 +43,7 @@ export class CameraRig {
     const c = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const spread = Math.max(size.x, size.z * 1.2, size.y * 1.6);
-    const want = THREE.MathUtils.clamp(spread * 1.15 + 9, cfg.minDist, cfg.maxDist);
+    const want = THREE.MathUtils.clamp(spread * 1.05 + 6.5, cfg.minDist * 0.7, cfg.maxDist);
     c.y = Math.max(c.y + 1.2, cfg.focusY);
     const k = this.snap ? 1 : 1 - Math.exp(-dt * 4.5);
     this.center.lerp(c, k);
