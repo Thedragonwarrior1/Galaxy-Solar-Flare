@@ -51,6 +51,73 @@ export function finalizeMove(key, m) {
   return m;
 }
 
+// Body proportions shared by the sim (reach clamp) and the renderer (rig). Units for a 1.8-tall fighter.
+export const BODY = {
+  shoulderH: 1.42, shoulderW: 0.21, hipH: 0.92, hipW: 0.12,
+  armReach: 1.0, legReach: 1.25,
+};
+
+const DEG = Math.PI / 180;
+function cyl(a, r, h) { return [-Math.sin(a * DEG) * r, h, Math.cos(a * DEG) * r]; }
+
+/**
+ * Keep hand/foot effector keys within what an un-stretchy body can physically reach, so the rendered
+ * limb really touches its hitbox. Hitbox radii grow by the clamped amount so gameplay reach is preserved.
+ * Weapon tips are shifted with their hand. Stretchy fighters (Captain Rubber) are exempt.
+ */
+function clampReach(c, m) {
+  if (!m.fx || c.stats.stretchy) return;
+  const s = (c.stats.height || 1.8) / 1.8;
+  const bigArm = (m.pose || []).some((k) => k[1].armScaleR > 1.2);
+  const excess = {};
+  for (const limb of ['handR', 'handL', 'footR', 'footL']) {
+    const tr = m.fx[limb];
+    if (!tr) continue;
+    if (bigArm && limb === 'handR') continue;
+    const isArm = limb.startsWith('hand');
+    const side = limb.endsWith('R') ? 1 : -1;
+    const jointH = (isArm ? BODY.shoulderH : BODY.hipH) * s;
+    const J = cyl(90 * side, (isArm ? BODY.shoulderW : BODY.hipW) * s, jointH);
+    const reach = (isArm ? BODY.armReach : BODY.legReach) * s;
+    const tip = limb === 'handR' ? m.fx.tipR : limb === 'handL' ? m.fx.tipL : null;
+    excess[limb] = [];
+    for (const k of tr) {
+      if (k[1] === null || k[1] === undefined) continue;
+      const P = cyl(k[1], k[2], k[3]);
+      const d = Math.hypot(P[0] - J[0], P[1] - J[1], P[2] - J[2]);
+      if (d <= reach) continue;
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 18; i++) {
+        const t = (lo + hi) / 2;
+        const Q = cyl(k[1], k[2] * t, jointH + (k[3] - jointH) * t);
+        if (Math.hypot(Q[0] - J[0], Q[1] - J[1], Q[2] - J[2]) > reach) hi = t; else lo = t;
+      }
+      const nr = k[2] * lo, nh = jointH + (k[3] - jointH) * lo;
+      const Q = cyl(k[1], nr, nh);
+      const shift = [Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]];
+      excess[limb].push([k[0], Math.hypot(...shift)]);
+      if (tip) {
+        const tk = tip.find((t) => t[0] === k[0] && t[1] !== null && t[1] !== undefined);
+        if (tk) {
+          const T = cyl(tk[1], tk[2], tk[3]);
+          const N = [T[0] + shift[0], T[1] + shift[1], T[2] + shift[2]];
+          tk[2] = Math.max(0.05, Math.hypot(N[0], N[2]));
+          tk[3] = N[1];
+          tk[1] = Math.atan2(-N[0], N[2]) / DEG + Math.round((tk[1] - Math.atan2(-N[0], N[2]) / DEG) / 360) * 360;
+        }
+      }
+      k[2] = nr; k[3] = nh;
+    }
+  }
+  for (const h of m.hb || []) {
+    const limb = h.at;
+    if (!limb || !excess[limb] || !excess[limb].length) continue;
+    let mx = 0;
+    for (const [f, e] of excess[limb]) if (f >= h.f[0] - 6 && f <= h.f[1] + 2) mx = Math.max(mx, e);
+    h.r += mx * 0.85;
+  }
+}
+
 /** Build a character def: finalize moves, add generic moves where missing. */
 export function defineCharacter(c) {
   const st = c.stats;
@@ -60,6 +127,7 @@ export function defineCharacter(c) {
   st.shortHop = st.shortHop || st.jumpVel * 0.66;
   const generic = genericMoves(c);
   for (const k in generic) if (!c.moves[k]) c.moves[k] = generic[k];
+  for (const k in c.moves) clampReach(c, c.moves[k]);
   for (const k in c.moves) finalizeMove(k, c.moves[k]);
   c.projectiles = c.projectiles || {};
   return c;

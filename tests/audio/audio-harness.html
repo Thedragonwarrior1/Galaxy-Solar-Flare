@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GRAND BRAWL audio harness</title>
+  <style>
+    body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; background: #10131a; color: #e8ecf3; }
+    button { margin: 2px; padding: 4px 8px; }
+    #log { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>GRAND BRAWL audio harness</h1>
+  <p>Automated: <code>node tests/audio/run-audio-tests.mjs</code>. Manual: click "Unlock", then audition sounds.</p>
+  <div id="controls"></div>
+  <div id="log"></div>
+  <script type="module" src="./out/audio-harness.js"></script>
+</body>
+</html>
