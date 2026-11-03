@@ -1,0 +1,44 @@
+--!strict
+-- RORONOA ZORO: three-sword style. Blade hitboxes follow the drawn swords frame by frame.
+local AD = require(script.Parent.Parent.Parent.Shared.AttackDefinitions)
+local M = AD.move
+
+return {
+	Id = "Zoro",
+	DisplayName = "ZORO",
+	Subtitle = "SANTORYU",
+	Style = "SWORDSMAN",
+	Description = "Close-to-mid range blade pressure. Multi-hit slashes, the advancing Oni Giri and a flying 36 Pound Cannon.",
+	Theme = { primary = { 78, 150, 74 }, accent = { 220, 255, 220 }, aura = "slash" },
+	Stats = {
+		Health = 1000,
+		Walk = 2.1,
+		Back = 1.6,
+		DashSpeed = 7.0,
+		DashFrames = 15,
+		BackdashSpeed = 5.8,
+		BackdashFrames = 16,
+		JumpVel = 7.8,
+		JumpX = 2.7,
+		Gravity = 1.0,
+		DoubleJump = false,
+		PushWidth = 22,
+		MeterGain = 1.0,
+	},
+	Moves = {
+		StandLight = M({ class = "L", anim = "StandLight", startup = 5, active = 3, recovery = 9, damage = 38, name = "Quick Slash", vfx = "slash" }),
+		StandMedium = M({ class = "M", anim = "StandMedium", startup = 8, active = 6, recovery = 14, damage = 32, multi = { count = 2, interval = 3 }, name = "Cross Slash", vfx = "slash" }),
+		StandHeavy = M({ class = "H", anim = "StandHeavy", startup = 14, active = 5, recovery = 20, damage = 110, kbX = 5, shake = 3,
+			motion = { { from = 10, to = 18, vx = 7 } }, name = "Oni Giri", vfx = "slash" }),
+		CrouchLight = M({ class = "L", anim = "CrouchLight", startup = 5, active = 3, recovery = 9, damage = 34, name = "Low Slash", vfx = "slash" }),
+		CrouchMedium = M({ class = "M", anim = "CrouchMedium", startup = 8, active = 4, recovery = 15, damage = 56, height = "low", name = "Shin Cutter", vfx = "slash" }),
+		CrouchHeavy = M({ class = "H", anim = "CrouchHeavy", startup = 11, active = 5, recovery = 22, damage = 92, launch = 8, name = "Rising Tiger", vfx = "slash" }),
+		AirLight = M({ class = "L", anim = "AirLight", startup = 5, active = 4, recovery = 6, damage = 34, air = true, height = "high", name = "Air Slash", vfx = "slash" }),
+		AirMedium = M({ class = "M", anim = "AirMedium", startup = 7, active = 4, recovery = 8, damage = 52, air = true, height = "high", name = "Air Kick" }),
+		AirHeavy = M({ class = "H", anim = "AirHeavy", startup = 9, active = 5, recovery = 10, damage = 84, air = true, height = "high", name = "Dragon Twister Drop", vfx = "slash" }),
+		Special = M({ class = "SP", anim = "Special", startup = 16, active = 4, recovery = 22, damage = 90,
+			projectile = { at = 16, kind = "slash", x = 32, y = 50, vx = 7.5, life = 55, w = 24, h = 42 }, name = "36 Pound Cannon" }),
+		Super = M({ class = "SU", anim = "Super", startup = 20, active = 22, recovery = 24, damage = 45, multi = { count = 7, interval = 3, finalLaunch = 7 },
+			hitstun = 18, kbX = 1.0, invuln = { from = 0, to = 22 }, motion = { { from = 18, to = 34, vx = 6 } }, name = "Asura: Nine Swords", vfx = "asura" }),
+	},
+}

@@ -1,0 +1,46 @@
+--!strict
+-- DONQUIXOTE DOFLAMINGO: long-range control. Thread attacks with long reach, Parasite binds,
+-- Birdcage covers the screen.
+local AD = require(script.Parent.Parent.Parent.Shared.AttackDefinitions)
+local M = AD.move
+
+return {
+	Id = "Doflamingo",
+	DisplayName = "DOFLAMINGO",
+	Subtitle = "HEAVENLY YAKSHA",
+	Style = "CONTROL",
+	Description = "Controls space with long thread attacks. Parasite binds the opponent in place; Birdcage leaves no room to run.",
+	Theme = { primary = { 246, 112, 176 }, accent = { 255, 255, 255 }, aura = "threads" },
+	Stats = {
+		Health = 1000,
+		Walk = 2.0,
+		Back = 1.9,
+		DashSpeed = 6.6,
+		DashFrames = 15,
+		BackdashSpeed = 6.0,
+		BackdashFrames = 16,
+		JumpVel = 8.2,
+		JumpX = 2.6,
+		Gravity = 0.95,
+		DoubleJump = false,
+		PushWidth = 22,
+		MeterGain = 1.0,
+	},
+	Moves = {
+		StandLight = M({ class = "L", anim = "StandLight", startup = 5, active = 3, recovery = 9, damage = 30, name = "Thread Flick", vfx = "thread" }),
+		StandMedium = M({ class = "M", anim = "StandMedium", startup = 7, active = 4, recovery = 13, damage = 55, name = "Thread Slash", vfx = "thread" }),
+		StandHeavy = M({ class = "H", anim = "StandHeavy", startup = 12, active = 6, recovery = 20, damage = 48, multi = { count = 2, interval = 3 }, kbX = 4,
+			name = "Five-Colour Strings", vfx = "thread" }),
+		CrouchLight = M({ class = "L", anim = "CrouchLight", startup = 5, active = 3, recovery = 9, damage = 28, name = "Low Flick", vfx = "thread" }),
+		CrouchMedium = M({ class = "M", anim = "CrouchMedium", startup = 8, active = 4, recovery = 14, damage = 50, height = "low", name = "Floor Thread", vfx = "floorthread" }),
+		CrouchHeavy = M({ class = "H", anim = "CrouchHeavy", startup = 10, active = 5, recovery = 20, damage = 80, launch = 7.5, name = "Rising Threads", vfx = "risethread" }),
+		AirLight = M({ class = "L", anim = "AirLight", startup = 5, active = 4, recovery = 6, damage = 30, air = true, height = "high", name = "Air Kick" }),
+		AirMedium = M({ class = "M", anim = "AirMedium", startup = 7, active = 4, recovery = 8, damage = 50, air = true, height = "high", name = "Air Thread", vfx = "thread" }),
+		AirHeavy = M({ class = "H", anim = "AirHeavy", startup = 9, active = 5, recovery = 10, damage = 72, air = true, height = "high", name = "Overheat Drop", vfx = "thread" }),
+		Special = M({ class = "SP", anim = "Special", startup = 10, active = 4, recovery = 22, damage = 60, bind = 48, kbX = 0,
+			projectile = { at = 10, kind = "parasite", x = 26, y = 70, vx = 5.2, life = 62, w = 26, h = 10 }, name = "Parasite" }),
+		Super = M({ class = "SU", anim = "Super", startup = 20, active = 24, recovery = 18, damage = 55, hitstun = 22, kbX = 1.5, invuln = { from = 0, to = 20 },
+			projectile = { at = 20, kind = "birdcage", spawn = "opponent", x = 0, y = 0, vx = 0, life = 40, w = 150, h = 170, hits = 6, interval = 6 },
+			name = "Birdcage" }),
+	},
+}

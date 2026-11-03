@@ -1,0 +1,48 @@
+--!strict
+-- CHARLOTTE KATAKURI: mid-range control and counters. Future Sight catches strikes and answers
+-- with an automatic counterattack.
+local AD = require(script.Parent.Parent.Parent.Shared.AttackDefinitions)
+local M = AD.move
+
+return {
+	Id = "Katakuri",
+	DisplayName = "KATAKURI",
+	Subtitle = "SWEET COMMANDER",
+	Style = "COUNTER",
+	Description = "Huge reach with mochi arms and Mogura. Future Sight (SPECIAL) counters any strike; DOWN + SPECIAL is a mochi flurry.",
+	Theme = { primary = { 196, 40, 62 }, accent = { 246, 238, 226 }, aura = "mochi" },
+	Stats = {
+		Health = 1100,
+		Walk = 1.8,
+		Back = 1.5,
+		DashSpeed = 6.2,
+		DashFrames = 17,
+		BackdashSpeed = 5.4,
+		BackdashFrames = 18,
+		JumpVel = 8.0,
+		JumpX = 2.5,
+		Gravity = 1.05,
+		DoubleJump = false,
+		PushWidth = 30,
+		MeterGain = 1.0,
+	},
+	Moves = {
+		StandLight = M({ class = "L", anim = "StandLight", startup = 6, active = 3, recovery = 10, damage = 40, name = "Mochi Jab" }),
+		StandMedium = M({ class = "M", anim = "StandMedium", startup = 8, active = 4, recovery = 14, damage = 62, name = "Extended Mochi Arm", vfx = "mochi" }),
+		StandHeavy = M({ class = "H", anim = "StandHeavy", startup = 14, active = 5, recovery = 22, damage = 108, kbX = 5, shake = 3, name = "Mogura Thrust" }),
+		CrouchLight = M({ class = "L", anim = "CrouchLight", startup = 6, active = 3, recovery = 10, damage = 36, name = "Low Mochi Jab" }),
+		CrouchMedium = M({ class = "M", anim = "CrouchMedium", startup = 9, active = 4, recovery = 16, damage = 58, height = "low", name = "Mochi Spike", vfx = "mochispike" }),
+		CrouchHeavy = M({ class = "H", anim = "CrouchHeavy", startup = 10, active = 5, recovery = 22, damage = 95, launch = 8, name = "Rising Mogura" }),
+		AirLight = M({ class = "L", anim = "AirLight", startup = 6, active = 4, recovery = 6, damage = 36, air = true, height = "high", name = "Air Mochi Jab" }),
+		AirMedium = M({ class = "M", anim = "AirMedium", startup = 7, active = 4, recovery = 8, damage = 54, air = true, height = "high", name = "Air Kick" }),
+		AirHeavy = M({ class = "H", anim = "AirHeavy", startup = 9, active = 5, recovery = 10, damage = 86, air = true, height = "high", name = "Mogura Drop" }),
+		Special = M({ class = "SP", anim = "Special", startup = 4, active = 24, recovery = 14, damage = 0, counter = { from = 4, to = 27, follow = "Counter" },
+			name = "Future Sight" }),
+		Counter = M({ class = "SP", anim = "Counter", startup = 3, active = 6, recovery = 18, damage = 130, kbX = 6, launch = 6, shake = 4, hidden = true,
+			invuln = { from = 0, to = 9 }, name = "Zan Giri Mochi", vfx = "mochi" }),
+		Special2 = M({ class = "SP", anim = "Special2", startup = 8, active = 12, recovery = 14, damage = 24, multi = { count = 4, interval = 3 }, activeLoop = true,
+			hitstun = 16, kbX = 1.4, name = "Mochi Flurry", vfx = "mochi" }),
+		Super = M({ class = "SU", anim = "Super", startup = 24, active = 12, recovery = 26, damage = 350, kbX = 7, launch = 6, shake = 9,
+			invuln = { from = 0, to = 24 }, name = "Power Mochi", vfx = "powermochi" }),
+	},
+}

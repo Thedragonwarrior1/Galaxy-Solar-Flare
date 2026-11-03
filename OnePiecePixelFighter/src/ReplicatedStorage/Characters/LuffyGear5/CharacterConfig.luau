@@ -1,0 +1,44 @@
+--!strict
+-- MONKEY D. LUFFY - GEAR 5: unpredictable toon fighter. Floaty double jump, rubbery reach,
+-- meter fills faster and empowers his Special (EX: spends 25 meter for armor + more damage).
+local AD = require(script.Parent.Parent.Parent.Shared.AttackDefinitions)
+local M = AD.move
+
+return {
+	Id = "LuffyGear5",
+	DisplayName = "LUFFY",
+	Subtitle = "GEAR 5",
+	Style = "TRICKSTER",
+	Description = "Toon physics. Double jump, rubber reach and the Drums of Liberation: meter builds fast and powers up the Toon Bounce.",
+	Theme = { primary = { 236, 238, 248 }, accent = { 150, 72, 200 }, aura = "cloud" },
+	Stats = {
+		Health = 1000,
+		Walk = 2.2,
+		Back = 2.0,
+		DashSpeed = 7.0,
+		DashFrames = 16,
+		BackdashSpeed = 6.0,
+		BackdashFrames = 16,
+		JumpVel = 8.0,
+		JumpX = 2.8,
+		Gravity = 0.85,
+		DoubleJump = true,
+		PushWidth = 20,
+		MeterGain = 1.35,
+	},
+	Moves = {
+		StandLight = M({ class = "L", anim = "StandLight", startup = 5, active = 3, recovery = 8, damage = 34, name = "Rubber Slap" }),
+		StandMedium = M({ class = "M", anim = "StandMedium", startup = 8, active = 4, recovery = 12, damage = 58, name = "Elastic Kick" }),
+		StandHeavy = M({ class = "H", anim = "StandHeavy", startup = 13, active = 6, recovery = 20, damage = 98, kbX = 5, shake = 3, name = "Giant Sweep" }),
+		CrouchLight = M({ class = "L", anim = "CrouchLight", startup = 5, active = 3, recovery = 8, damage = 28, name = "Low Slap" }),
+		CrouchMedium = M({ class = "M", anim = "CrouchMedium", startup = 8, active = 4, recovery = 13, damage = 52, height = "low", name = "Rubber Sweep" }),
+		CrouchHeavy = M({ class = "H", anim = "CrouchHeavy", startup = 10, active = 5, recovery = 20, damage = 85, launch = 8, name = "Rubber Rocket" }),
+		AirLight = M({ class = "L", anim = "AirLight", startup = 5, active = 4, recovery = 7, damage = 32, air = true, height = "high", name = "Air Slap" }),
+		AirMedium = M({ class = "M", anim = "AirMedium", startup = 7, active = 5, recovery = 9, damage = 52, air = true, height = "high", name = "Toon Kick" }),
+		AirHeavy = M({ class = "H", anim = "AirHeavy", startup = 10, active = 6, recovery = 12, damage = 90, air = true, height = "high", knockdown = true, shake = 3, name = "Giant Stomp" }),
+		Special = M({ class = "SP", anim = "Special", startup = 10, active = 11, recovery = 18, damage = 55, multi = { count = 2, interval = 6 }, kbX = 4.5,
+			motion = { { from = 6, to = 20, vx = 6.5 } }, ex = { cost = 25, damage = 1.45, armor = true }, name = "Toon Bounce", vfx = "toon" }),
+		Super = M({ class = "SU", anim = "Super", startup = 22, active = 14, recovery = 24, damage = 380, launch = 7, kbX = 6, shake = 9,
+			invuln = { from = 0, to = 22 }, name = "Giant Liberation Fist", vfx = "giantfist" }),
+	},
+}
