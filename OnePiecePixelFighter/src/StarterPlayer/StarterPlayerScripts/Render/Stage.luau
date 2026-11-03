@@ -39,6 +39,7 @@ function Stage.new(name: string, screenW: number, screenH: number)
 		floor = data.Floor,
 		sky = Raster.gradient(screenW, screenH, data.Sky),
 		skyStops = data.Sky,
+		tint = data.Tint,
 		layers = layers,
 		w = screenW,
 		h = screenH,

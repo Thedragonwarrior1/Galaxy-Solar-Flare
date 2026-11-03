@@ -17,7 +17,7 @@ local LocalSession = {}
 LocalSession.__index = LocalSession
 
 export type Options = {
-	mode: string, -- "training" | "versus" | "attract"
+	mode: string, -- "training" | "versus" | "attract" | "showcase" (title screen)
 	p1: string,
 	p2: string,
 	stage: string,
@@ -32,7 +32,7 @@ function LocalSession.new(opts: Options)
 	local match = Match.new({
 		p1 = CharacterData.get(opts.p1),
 		p2 = CharacterData.get(opts.p2),
-		mode = if opts.mode == "training" then "training" else "versus",
+		mode = if opts.mode == "training" or opts.mode == "showcase" then "training" else "versus",
 		stage = opts.stage,
 		roundTime = opts.roundTime,
 		seed = os.time(),
@@ -53,11 +53,68 @@ function LocalSession.new(opts: Options)
 	}, LocalSession)
 	if opts.mode == "training" then
 		self.ai2.mode = "stand"
+	elseif opts.mode == "showcase" then
+		match.training.infiniteMeter = true
+		self.stage = opts.stage
+		self.showT = 0
+		self:placeShowcase()
 	end
 	return self
 end
 
+-- Title-screen showcase: two fighters idle facing each other and take turns
+-- showing off a move; every ~12 s a new pair (and stage) is featured.
+local SHOW_MOVES = { 128, 64, 256, 32, 128 + 8 }
+function LocalSession.placeShowcase(self: any)
+	local m = self.match
+	local mid = CombatConfig.StageWidth / 2
+	for i, f in m.fighters do
+		f.x = mid + (if i == 1 then -1 else 1) * 62
+		f.facing = if i == 1 then 1 else -1
+		f:setState("idle")
+	end
+end
+
+function LocalSession.stepShowcase(self: any)
+	local m = self.match
+	self.showT += 1
+	local b1, b2 = 0, 0
+	local t = self.showT
+	if t % 240 == 150 then
+		b1 = SHOW_MOVES[(t // 240) % #SHOW_MOVES + 1]
+	elseif t % 240 == 30 and t > 240 then
+		b2 = SHOW_MOVES[(t // 240 + 2) % #SHOW_MOVES + 1]
+	end
+	m:step(b1, b2)
+	for _, f in m.fighters do
+		f.hp = f.maxHp
+		if f:actionable() and math.abs(f.x - CombatConfig.StageWidth / 2) > 90 then
+			self:placeShowcase()
+		end
+	end
+	if t >= 720 then
+		local ids = CharacterData.Order
+		local a = ids[math.random(1, #ids)]
+		local b = ids[(table.find(ids, a) :: number) % #ids + 1]
+		local stages = { "Harbour", "Storm", "SkyIsland" }
+		self.stage = stages[math.random(1, #stages)]
+		local nm = Match.new({ p1 = CharacterData.get(a), p2 = CharacterData.get(b), mode = "training", stage = self.stage })
+		nm.training.infiniteMeter = true
+		self.match = nm
+		self.showT = 0
+		self:placeShowcase()
+		self.restarted = true
+	end
+	for _, e in m.events do
+		table.insert(self.events, e)
+	end
+end
+
 function LocalSession.stepOnce(self: any)
+	if self.mode == "showcase" then
+		self:stepShowcase()
+		return
+	end
 	local m = self.match
 	local b1, p1, b2, p2 = 0, 0, 0, 0
 	if self.ai1 then

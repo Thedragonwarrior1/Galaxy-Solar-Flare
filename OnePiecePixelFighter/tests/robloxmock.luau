@@ -147,6 +147,14 @@ Inst.__index = function(self, k)
 			return roblox.Vector2.new(1280, 720)
 		elseif k == "AbsolutePosition" then
 			return roblox.Vector2.new(0, 0)
+		elseif k == "Position" or k == "Size" then
+			return roblox.UDim2.new(0, 0, 0, 0)
+		elseif k == "AnchorPoint" then
+			return roblox.Vector2.new(0, 0)
+		elseif k == "Rotation" or k == "BackgroundTransparency" or k == "ZIndex" then
+			return if k == "ZIndex" then 1 else 0
+		elseif k == "Visible" then
+			return true
 		end
 		return nil
 	end
@@ -207,6 +215,14 @@ function Inst:FindFirstChild(n)
 end
 function Inst:WaitForChild(n)
 	return self:FindFirstChild(n)
+end
+function Inst:FindFirstChildOfClass(cls)
+	for _, c in self.__children do
+		if c.__class == cls then
+			return c
+		end
+	end
+	return nil
 end
 function Inst:IsA(c)
 	return isA(self.__class, c)
@@ -346,7 +362,22 @@ local workspaceMock = newInstance("Workspace", { CurrentCamera = camera })
 local remotesFolder = newInstance("Folder", { Name = "Remotes" })
 M.remotes = remotesFolder
 
+local TweenService = {}
+function TweenService:Create(inst, info, props)
+	assert(type(props) == "table", "TweenService:Create needs a property table")
+	return {
+		Play = function()
+			for k, v in props do
+				inst[k] = v -- validated by the strict instance mock
+			end
+		end,
+		Cancel = function() end,
+		Completed = Signal.new("Completed"),
+	}
+end
+
 local services = {
+	TweenService = TweenService,
 	UserInputService = UIS,
 	RunService = RS,
 	AssetService = AssetService,
@@ -391,7 +422,27 @@ H.globals.Content = {
 		return { object = o }
 	end,
 }
-H.globals.task = task
+-- transitions use task.delay; run callbacks immediately so the headless
+-- client stays deterministic
+H.globals.task = {
+	spawn = function(f, ...)
+		f(...)
+	end,
+	defer = function(f, ...)
+		f(...)
+	end,
+	delay = function(_, f, ...)
+		f(...)
+	end,
+	wait = function()
+		return 0
+	end,
+}
+H.globals.TweenInfo = {
+	new = function(...)
+		return { ... }
+	end,
+}
 H.globals.workspace = workspaceMock
 H.globals.warn = function(...)
 	M.warnings = (M.warnings or 0) + 1

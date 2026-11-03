@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import math
 
-from body import Build, fist, foot, head_pt, head_poly, limb, sway, torso_poly
+from body import Build, crease, fist, hair_detail, joint, scaled, shoulder_cap, foot, head_pt, head_poly, limb, sway, torso_poly
+import faces
 from rig import Palette, add, mix, norm, sub, vdir
 
 
@@ -22,16 +23,19 @@ def palette(alt=False):
     p.ramp("lens", [(255, 150, 200), (220, 60, 130), (150, 30, 90)])
     p.named("white", (255, 255, 255))
     p.named("eye", (28, 12, 30))
+    p.named("lens_d", (190, 40, 110))
+    p.named("lens_l", (255, 170, 210))
+    p.named("brow", (200, 150, 60))
     p.named("mouth", (130, 30, 50))
     p.named("teeth", (255, 255, 255))
     p.named("vein", (200, 80, 90))
     return p
 
 
-BUILD = Build(thigh=24, shin=23.5, ankle=2.6, foot=7.0, torso=27, neck=3.4,
+BUILD = scaled(1.06, Build(thigh=24, shin=23.5, ankle=2.6, foot=7.0, torso=27, neck=3.4,
               head_rx=6.9, head_ry=7.6, upper=15, fore=14, hand=2.8,
               hip_w=10, sh_w=16, stance_w=22, thigh_r=3.9, shin_r=3.0,
-              upper_r=3.0, fore_r=2.6, height=0.93)
+              upper_r=3.0, fore_r=2.6, height=0.93))
 
 FACES = {
     # sunglasses: 'g' lens (two-tone), 'G' lens highlight
@@ -142,6 +146,7 @@ def torso_pt(sk, b, u, v):
 def _leg(fr, sk, b, p, side, z, bias):
     hip, kn, an = sk["hip" + side], sk["knee" + side], sk["ankle" + side]
     limb(fr, hip, kn, 4.2, 3.5, p["pants"], z + 6, group="pl" + side, bias=bias)
+    crease(fr, hip, kn, an, p["pants"][-1], z + 6.5, n=1)
     limb(fr, kn, an, 3.4, 2.6, p["pants"], z + 6, group="pl" + side, bias=bias)
     # vertical stripes on the trousers
     d = norm(sub(kn, hip))
@@ -180,12 +185,13 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
     fr.ellipse(head_pt(sk, b, -3.0, 0.8), 1.5, 2.1, skin, zh + 0.2, group="ear", bias=-0.2)
     expr = pose.get("expr", "grin")
     cm = {"k": p["eye"], "g": p["lens"][1], "G": p["lens"][0], "t": p["teeth"], "m": p["mouth"], "v": p["vein"]}
-    fr.stamp(FACES[expr], head_pt(sk, b, -1.5, -2.8), cm, zh + 2)
+    fr.stamp(faces.build("dofla", expr), head_pt(sk, b, -3.4, -3.8), faces.cmap(p, skin), zh + 2)
     # short swept-back blond hair
     sw = sway(tick, 26, 0.5) - wind
     hp = head_poly(sk, b, [(-7.4, 1.0), (-8.8 + sw, -2.2), (-7.4 + sw, -5.4), (-8.4 + sw, -7.2), (-3.4, -9.2), (2, -9.2),
                            (5.6, -7.6), (7.2, -4.8), (5.2, -5.2), (2.6, -5.6), (-0.4, -4.6), (-3, -3), (-5, -1.6)])
     fr.poly(hp, p["hair"], zh + 3, group="hair", soft=2)
+    hair_detail(fr, hp, sk.head, p["hair"], zh + 3.05, tips=[1, 3, 4, 5, 6])
     _coat(fr, sk, b, p, tick, wind, front=True)
     # near arm in coat sleeve
     limb(fr, sk.shN, sk.elN, 3.8, 3.4, p["coat"], 60, group="armN")

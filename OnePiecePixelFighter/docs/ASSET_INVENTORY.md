@@ -19,13 +19,13 @@ All sizes are in game pixels on the 320×180 virtual screen, measured from each 
 
 | Slot | Fighter | Height | Main palette | Costume / hair / accessories / weapon | Silhouette | Frames |
 |---|---|---|---|---|---|---|
-| 1 | **Luffy – Gear 2** | 75 | flushed pink skin, red vest, blue shorts, yellow sash, straw | Straw hat with red band, open red vest with buttons, X scar, scar under eye, black messy hair, sandals. Pink steam aura. | Lean boxer stance | 127 |
-| 2 | **Luffy – Gear 4** | 81 (65 wide, fists reach ~120) | black-red haki, red vest, white steam | Giant haki forearms and fists with flame lines, haki shins, pink chest tattoos, vest draped on the back, steam ring around the shoulders, spiky hair. | Huge upper body, always bouncing | 126 |
-| 3 | **Luffy – Gear 5** | 85 (with hair) | white clothes and hair, purple sash, tan skin | Flickering white flame hair, cloud halo, cloud scarf, big laughing face, white shorts. | Loose, rubbery, toon squash & stretch | 124 |
-| 4 | **Doflamingo** | 94 | hot pink coat, white shirt, orange/purple stripes, blond | Feather coat with jagged hem (plus collar fluff over the shoulder), sunglasses, permanent grin, striped trousers, open "puppeteer" hands. | Tall, coat mass behind him | 119 |
-| 5 | **Enel** | 95 (with drums) | pale skin, gold, orange trousers, blue sash | Raigo drum ring with tomoe marks, golden Nonosama staff, white head cloth, long earlobes, gold armbands, barefoot. | Upright and aloof, drum ring arc overhead | 121 |
-| 6 | **Zoro** | 75 (low stance) | white shirt, green haramaki, black trousers, green bandana | Three swords (Wado in the mouth, Kitetsu and Shusui in the hands), three earrings, bandana tails, boots. | Low wide Santoryu stance, blades forward | 118 |
-| 7 | **Katakuri** | 121 | red hair, purple vest/trousers, leather, cream scarf | Wild spiky hair, stitched mouth with teeth, chest tattoos, studded gauntlets, Mogura trident, tattered scarf. | Tallest and broadest, trident overhead | 126 |
+| 1 | **Luffy – Gear 2** | 75 | flushed pink skin, red vest, blue shorts, yellow sash, straw | Straw hat with red band, open red vest with buttons, X scar, scar under eye, black messy hair, sandals. Pink steam aura. | Lean boxer stance | 218 |
+| 2 | **Luffy – Gear 4** | 81 (65 wide, fists reach ~120) | black-red haki, red vest, white steam | Giant haki forearms and fists with flame lines, haki shins, pink chest tattoos, vest draped on the back, steam ring around the shoulders, spiky hair. | Huge upper body, always bouncing | 219 |
+| 3 | **Luffy – Gear 5** | 85 (with hair) | white clothes and hair, purple sash, tan skin | Flickering white flame hair, cloud halo, cloud scarf, big laughing face, white shorts. | Loose, rubbery, toon squash & stretch | 216 |
+| 4 | **Doflamingo** | 94 | hot pink coat, white shirt, orange/purple stripes, blond | Feather coat with jagged hem (plus collar fluff over the shoulder), sunglasses, permanent grin, striped trousers, open "puppeteer" hands. | Tall, coat mass behind him | 210 |
+| 5 | **Enel** | 95 (with drums) | pale skin, gold, orange trousers, blue sash | Raigo drum ring with tomoe marks, golden Nonosama staff, white head cloth, long earlobes, gold armbands, barefoot. | Upright and aloof, drum ring arc overhead | 216 |
+| 6 | **Zoro** | 75 (low stance) | white shirt, green haramaki, black trousers, green bandana | Three swords (Wado in the mouth, Kitetsu and Shusui in the hands), three earrings, bandana tails, boots. | Low wide Santoryu stance, blades forward | 211 |
+| 7 | **Katakuri** | 121 | red hair, purple vest/trousers, leather, cream scarf | Wild spiky hair, stitched mouth with teeth, chest tattoos, studded gauntlets, Mogura trident, tattered scarf. | Tallest and broadest, trident overhead | 226 |
 
 Each fighter's assets live in its own folder:
 
@@ -46,12 +46,12 @@ The `CharacterData` tests check that no two fighters share frame data, and that 
 
 | Group | Animations |
 |---|---|
-| Idle | Idle (breathing, hair/cloth sway, character-specific motion: Gear 4 bounces, Gear 5 wobbles), Intro (Gear 4's arm-bite transformation, Zoro tying his bandana, Gear 5 laughing, ...) |
+| Idle | A unique 10–12 frame idle per fighter (see docs/POLISH_UPDATE.md), plus an Intro (Gear 4's arm-bite transformation, Zoro tying his bandana, Gear 5 laughing, ...) |
 | Walk | Walk, WalkBack (guarded), DashForward, DashBack, Crouch |
 | Jump | JumpSquat (anticipation), JumpRise, JumpApex, JumpFall, Land |
 | Attacks | Stand / Crouch / Air × Light / Medium / Heavy (9 unique attacks) |
 | Specials | Special, Super, plus Special2 for Enel (Mantra Step) and Katakuri (Mochi Flurry), and Counter (Katakuri's Future Sight follow-up) |
-| Hit | Block, CrouchBlock, HitLight, HitHeavy, HitCrouch, Launched, Knockdown, GetUp, Defeat |
+| Hit | Block, CrouchBlock, HitLight (face), HitGut (body), HitHeavy (stagger), HitCrouch, Launched, Knockdown (bounce), GetUp, Defeat |
 | Victory | Victory |
 
 Attack frames are tagged **startup / active / recovery**. The game maps each move's frame data onto those phases, so the strike pose is on screen exactly while the hitbox is live. A test checks this for every move of every fighter.

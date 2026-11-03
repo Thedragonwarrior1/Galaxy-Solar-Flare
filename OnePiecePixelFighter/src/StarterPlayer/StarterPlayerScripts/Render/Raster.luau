@@ -134,18 +134,31 @@ function Raster.disc(s: Surface, cx: number, cy: number, r: number, c: number, h
 	end
 end
 
-function Raster.ring(s: Surface, cx: number, cy: number, r: number, c: number, thick: number?)
+function Raster.ring(s: Surface, cx: number, cy: number, r: number, c: number, thick: number?, ry: number?)
 	local n = math.max(12, math.floor(r * 6))
 	local t = thick or 1
+	local sy = ry or 1
 	for i = 0, n - 1 do
 		local a = i / n * math.pi * 2
 		local x = cx + math.cos(a) * r
-		local y = cy + math.sin(a) * r
+		local y = cy + math.sin(a) * r * sy
 		if t <= 1 then
 			Raster.pixel(s, x, y, c)
 		else
 			Raster.rect(s, x - t // 2, y - t // 2, t, t, c)
 		end
+	end
+end
+
+-- Push a column of pixels down by `depth` from row `top` (bending floor effect).
+function Raster.sinkColumn(s: Surface, x: number, top: number, depth: number)
+	x, top = math.floor(x), math.floor(top)
+	if x < 0 or x >= s.w or depth <= 0 then
+		return
+	end
+	local buf, W = s.buf, s.w
+	for y = s.h - 1, top + depth, -1 do
+		writeu32(buf, (y * W + x) * 4, readu32(buf, ((y - depth) * W + x) * 4))
 	end
 end
 

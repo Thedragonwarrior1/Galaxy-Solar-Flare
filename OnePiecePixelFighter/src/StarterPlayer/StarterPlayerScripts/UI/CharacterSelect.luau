@@ -1,21 +1,26 @@
 --!strict
--- Arcade character select: seven portrait slots, two big animated previews,
--- fighting-style descriptions, a move list with frame data, and stage select.
---
+-- Arcade character select.
+--   * two big animated previews (P1 left, P2 right) with each fighter's idle
+--     effects (steam, bouncing, laughing floor, strings, sparks, mochi)
+--   * name, title, style, POWER / SPEED / RANGE ratings, description
+--   * roster strip of seven pixel portraits; the highlighted card pops
+--   * stage select, move list with frame data
 -- Modes:
---   "versus"   (Local Test Match) P1 picks, then P2 (P2 keys or P1) picks; P2 = HUMAN or CPU
+--   "versus"   P1 picks, then P2 (P2 keys or P1); P2 = HUMAN or CPU
 --   "training" P1 picks a fighter and a dummy
 --   "online"   P1 picks, then the server finds an opponent
---   "inspect"  browse fighters; previews cycle through their attack animations
+--   "inspect"  browse; previews cycle through each fighter's attacks
 
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local CharacterData = require(Shared:WaitForChild("CharacterData"))
 local AttackDefinitions = require(Shared:WaitForChild("AttackDefinitions"))
 local Input = require(Shared:WaitForChild("Sim"):WaitForChild("Input"))
-local Timeline = require(Shared:WaitForChild("Sim"):WaitForChild("Timeline"))
 local Widgets = require(script.Parent:WaitForChild("Widgets"))
+local Transition = require(script.Parent:WaitForChild("TransitionController"))
+local Preview = require(script.Parent:WaitForChild("CharacterPreviewController"))
 local Render = script.Parent.Parent:WaitForChild("Render")
 local Canvas = require(Render:WaitForChild("Canvas"))
 local Raster = require(Render:WaitForChild("Raster"))
@@ -27,8 +32,8 @@ local C = Widgets.Colors
 local CharacterSelect = {}
 CharacterSelect.__index = CharacterSelect
 
-local PREVIEW_W, PREVIEW_H = 170, 150
-local CYCLE = { "Idle", "Walk", "StandLight", "StandMedium", "StandHeavy", "CrouchHeavy", "AirHeavy", "Special", "Super", "Victory" }
+local GOLD = Color3.fromRGB(255, 204, 64)
+local SHOWREEL = { "StandLight", "StandMedium", "StandHeavy", "CrouchHeavy", "AirHeavy", "Special", "Super", "Victory" }
 local INPUT_NAMES = {
 	StandLight = "1",
 	StandMedium = "2",
@@ -67,16 +72,40 @@ export type Options = {
 	initial: { string }?,
 }
 
-local function preview(parent: Frame, slot: number)
-	local box = Widgets.frame(parent, {
-		Name = "Preview" .. slot,
-		Size = UDim2.fromScale(0.3, 0.6),
-		Position = if slot == 1 then UDim2.fromScale(0.02, 0.14) else UDim2.fromScale(0.98, 0.14),
-		AnchorPoint = if slot == 1 then Vector2.new(0, 0) else Vector2.new(1, 0),
-		BackgroundColor3 = C.panel,
+local function statBar(parent: Instance, label: string, y: number, color: Color3)
+	Widgets.text(parent, label, {
+		Size = UDim2.fromScale(0.3, 0.05),
+		Position = UDim2.fromScale(0.04, y),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = Color3.fromRGB(200, 190, 220),
+		ZIndex = 4,
+	})
+	local pips = {}
+	for k = 1, 5 do
+		local p = Widgets.frame(parent, {
+			Size = UDim2.fromScale(0.1, 0.035),
+			Position = UDim2.fromScale(0.36 + (k - 1) * 0.115, y + 0.008),
+			BackgroundColor3 = C.ink,
+			ZIndex = 4,
+		})
+		Widgets.stroke(p, Color3.fromRGB(90, 70, 120), 1)
+		table.insert(pips, p)
+	end
+	return { pips = pips, color = color }
+end
+
+local function panel(root: Frame, slot: number)
+	local left = slot == 1
+	local tint = if left then C.p1 else C.p2
+	local box = Widgets.frame(root, {
+		Name = "Panel" .. slot,
+		Size = UDim2.fromScale(0.3, 0.66),
+		Position = if left then UDim2.fromScale(0.02, 0.11) else UDim2.fromScale(0.98, 0.11),
+		AnchorPoint = if left then Vector2.new(0, 0) else Vector2.new(1, 0),
+		BackgroundColor3 = Color3.fromRGB(22, 14, 36),
 		ZIndex = 2,
 	})
-	Widgets.stroke(box, if slot == 1 then C.p1 else C.p2, 3)
+	Widgets.stroke(box, tint, 3)
 	local art = Widgets.frame(box, {
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0.56),
@@ -84,72 +113,102 @@ local function preview(parent: Frame, slot: number)
 		AnchorPoint = Vector2.new(0.5, 0),
 		ZIndex = 3,
 	})
-	Widgets.aspect(art, PREVIEW_W / PREVIEW_H)
-	local cv = Canvas.small(art, PREVIEW_W, PREVIEW_H)
-	if cv then
-		cv.label.ZIndex = 3
+	Widgets.aspect(art, 170 / 150)
+	local glow = if left then { 140, 50, 70 } else { 50, 90, 160 }
+	local pv = Preview.new(art, { w = 170, h = 150, backdrop = { 28, 18, 46 }, glow = glow })
+	if pv.cv then
+		pv.cv.label.ZIndex = 3
 	end
+	local tag = Widgets.text(box, if left then "P1" else "P2", {
+		Size = UDim2.fromScale(0.22, 0.06),
+		Position = UDim2.fromScale(0.03, 0.01),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = tint,
+		ZIndex = 5,
+	})
 	local name = Widgets.text(box, "", {
-		Size = UDim2.fromScale(0.94, 0.08),
-		Position = UDim2.fromScale(0.03, 0.62),
+		Size = UDim2.fromScale(0.92, 0.08),
+		Position = UDim2.fromScale(0.04, 0.57),
+		TextXAlignment = Enum.TextXAlignment.Left,
 		Font = Widgets.TitleFont,
-		TextColor3 = C.gold,
-		ZIndex = 3,
-	})
-	local sub = Widgets.text(box, "", { Size = UDim2.fromScale(0.94, 0.05), Position = UDim2.fromScale(0.03, 0.70), ZIndex = 3 })
-	local style = Widgets.text(box, "", {
-		Size = UDim2.fromScale(0.94, 0.05),
-		Position = UDim2.fromScale(0.03, 0.76),
-		TextColor3 = if slot == 1 then C.p1 else C.p2,
-		ZIndex = 3,
-	})
-	local desc = Widgets.text(box, "", {
-		Size = UDim2.fromScale(0.94, 0.16),
-		Position = UDim2.fromScale(0.03, 0.82),
-		TextWrapped = true,
-		TextScaled = true,
-		Font = Enum.Font.GothamBold,
-		TextStrokeTransparency = 1,
-		ZIndex = 3,
-	})
-	local tag = Widgets.text(box, if slot == 1 then "P1" else "P2", {
-		Size = UDim2.fromScale(0.2, 0.07),
-		Position = UDim2.fromScale(0.02, 0.01),
-		TextColor3 = if slot == 1 then C.p1 else C.p2,
+		TextColor3 = GOLD,
 		ZIndex = 4,
 	})
-	local moveLabel = Widgets.text(
-		box,
-		"",
-		{ Size = UDim2.fromScale(0.96, 0.05), Position = UDim2.fromScale(0.02, 0.56), ZIndex = 4, TextColor3 = C.meterFull }
-	)
+	local sub = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.6, 0.045),
+		Position = UDim2.fromScale(0.04, 0.65),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 4,
+	})
+	local style = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.34, 0.045),
+		Position = UDim2.fromScale(0.96, 0.65),
+		AnchorPoint = Vector2.new(1, 0),
+		BackgroundColor3 = tint,
+		BackgroundTransparency = 0,
+		TextColor3 = C.white,
+		ZIndex = 4,
+	})
+	local bars = {
+		statBar(box, "POWER", 0.71, Color3.fromRGB(255, 110, 70)),
+		statBar(box, "SPEED", 0.765, Color3.fromRGB(110, 230, 140)),
+		statBar(box, "RANGE", 0.82, Color3.fromRGB(110, 180, 255)),
+	}
+	local desc = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.92, 0.11),
+		Position = UDim2.fromScale(0.04, 0.875),
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Font = Enum.Font.GothamBold,
+		TextStrokeTransparency = 1,
+		TextColor3 = Color3.fromRGB(220, 214, 236),
+		ZIndex = 4,
+	})
+	local moveLabel = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.9, 0.045),
+		Position = UDim2.fromScale(0.05, 0.505),
+		TextColor3 = C.meterFull,
+		ZIndex = 5,
+	})
 	return {
 		box = box,
-		canvas = cv,
+		preview = pv,
+		tag = tag,
 		name = name,
 		sub = sub,
 		style = style,
+		bars = bars,
 		desc = desc,
-		tag = tag,
 		moveLabel = moveLabel,
-		t = 0,
-		cycle = 1,
-		cycleT = 0,
 		char = "",
+		idleWait = 0,
 	}
 end
 
 function CharacterSelect.new(gui: ScreenGui, opts: Options)
-	local root = Widgets.frame(gui, {
-		Name = "CharacterSelect",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Color3.fromRGB(16, 10, 28),
-		ZIndex = 1,
-	})
+	local root = Widgets.frame(
+		gui,
+		{ Name = "CharacterSelect", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(14, 8, 26), ZIndex = 1 }
+	)
 	local g = Instance.new("UIGradient")
-	g.Rotation = 90
-	g.Color = ColorSequence.new(Color3.fromRGB(70, 30, 70), Color3.fromRGB(14, 10, 30))
+	g.Rotation = 115
+	g.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 26, 50)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(18, 10, 34)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 40, 80)),
+	})
 	g.Parent = root
+	for k = 0, 5 do
+		Widgets.frame(root, {
+			Name = "Stripe",
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.96,
+			Size = UDim2.fromScale(0.04, 2),
+			Position = UDim2.fromScale(0.1 + k * 0.17, -0.5),
+			Rotation = 25,
+			ZIndex = 1,
+		})
+	end
 
 	local self = setmetatable({
 		root = root,
@@ -161,43 +220,85 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 		p2Human = false,
 		stageIndex = 1,
 		cards = {},
-		previews = {},
+		panels = {},
 		conn = nil :: RBXScriptConnection?,
 		showMoves = false,
 		smallCanvases = {},
+		statusText = "",
 	}, CharacterSelect)
 
+	local header = Widgets.frame(
+		root,
+		{ BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.35, Size = UDim2.fromScale(1, 0.09), ZIndex = 2 }
+	)
 	local titles = {
-		versus = "LOCAL TEST MATCH",
-		training = "TRAINING - CHOOSE FIGHTER AND DUMMY",
-		online = "ONLINE 1V1 - CHOOSE YOUR FIGHTER",
+		versus = "LOCAL MATCH  -  SELECT YOUR FIGHTERS",
+		training = "TRAINING  -  FIGHTER AND DUMMY",
+		online = "ONLINE 1V1  -  SELECT YOUR FIGHTER",
 		inspect = "CHARACTER SELECT",
 	}
-	Widgets.text(root, titles[opts.mode] or "SELECT YOUR FIGHTER", {
-		Size = UDim2.fromScale(0.9, 0.08),
-		Position = UDim2.fromScale(0.05, 0.02),
-		Font = Widgets.TitleFont,
-		TextColor3 = C.gold,
-		ZIndex = 2,
-	})
-	self.previews[1] = preview(root, 1)
-	self.previews[2] = preview(root, 2)
-
-	-- roster grid (centre)
-	local grid = Widgets.frame(root, {
-		Name = "Roster",
-		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(0.34, 0.6),
-		Position = UDim2.fromScale(0.5, 0.14),
+	Widgets.text(header, titles[opts.mode] or "SELECT YOUR FIGHTER", {
+		Size = UDim2.fromScale(0.8, 0.7),
+		Position = UDim2.fromScale(0.5, 0.15),
 		AnchorPoint = Vector2.new(0.5, 0),
+		Font = Widgets.TitleFont,
+		TextColor3 = GOLD,
+		ZIndex = 3,
+	})
+	Widgets.frame(header, { BackgroundColor3 = GOLD, Size = UDim2.fromScale(1, 0.05), Position = UDim2.fromScale(0, 0.95), ZIndex = 3 })
+
+	self.panels[1] = panel(root, 1)
+	self.panels[2] = panel(root, 2)
+
+	local vs = Widgets.text(root, "VS", {
+		Size = UDim2.fromScale(0.16, 0.16),
+		Position = UDim2.fromScale(0.5, 0.3),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Font = Widgets.TitleFont,
+		TextColor3 = Color3.fromRGB(255, 90, 90),
+		ZIndex = 3,
+	})
+	local vstroke = Instance.new("UIStroke")
+	vstroke.Thickness = 3
+	vstroke.Color = Color3.fromRGB(30, 8, 16)
+	vstroke.Parent = vs
+	self.vs = vs
+	self.stageLabel = Widgets.text(root, "", {
+		Size = UDim2.fromScale(0.24, 0.045),
+		Position = UDim2.fromScale(0.5, 0.47),
+		AnchorPoint = Vector2.new(0.5, 0),
+		TextColor3 = GOLD,
+		ZIndex = 3,
+	})
+	Widgets.button(root, "<", { Size = UDim2.fromScale(0.035, 0.05), Position = UDim2.fromScale(0.345, 0.465), ZIndex = 3 }, function()
+		self:cycleStage(-1)
+	end)
+	Widgets.button(root, ">", { Size = UDim2.fromScale(0.035, 0.05), Position = UDim2.fromScale(0.62, 0.465), ZIndex = 3 }, function()
+		self:cycleStage(1)
+	end)
+	self.status = Widgets.text(root, "", {
+		Size = UDim2.fromScale(0.34, 0.04),
+		Position = UDim2.fromScale(0.5, 0.55),
+		AnchorPoint = Vector2.new(0.5, 0),
+		TextWrapped = true,
+		ZIndex = 3,
+	})
+
+	local strip = Widgets.frame(root, {
+		Name = "Roster",
+		BackgroundColor3 = Color3.new(0, 0, 0),
+		BackgroundTransparency = 0.45,
+		Size = UDim2.fromScale(0.96, 0.15),
+		Position = UDim2.fromScale(0.02, 0.785),
 		ZIndex = 2,
 	})
-	local layout = Instance.new("UIGridLayout")
-	layout.CellSize = UDim2.fromScale(0.31, 0.3)
-	layout.CellPadding = UDim2.fromScale(0.03, 0.03)
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Padding = UDim.new(0.008, 0)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = grid
+	layout.Parent = strip
 	for i, id in CharacterData.Order do
 		local cfg = CharacterData.get(id).config
 		local card = Instance.new("TextButton")
@@ -205,27 +306,55 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 		card.LayoutOrder = i
 		card.Text = ""
 		card.AutoButtonColor = false
-		card.BackgroundColor3 = C.panel
+		card.BackgroundColor3 = Color3.fromRGB(40, 28, 64)
 		card.BorderSizePixel = 0
-		card.ZIndex = 2
-		card.Parent = grid
-		local stroke = Widgets.stroke(card, C.ink, 3)
-		local art = Widgets.frame(card, { BackgroundTransparency = 1, Size = UDim2.fromScale(1, 0.78), ZIndex = 3 })
+		card.Size = UDim2.fromScale(0.13, 0.9)
+		card.ZIndex = 3
+		card.Parent = strip
+		local cg = Instance.new("UIGradient")
+		cg.Rotation = 90
+		cg.Color = ColorSequence.new(Color3.fromRGB(80, 60, 120), Color3.fromRGB(30, 20, 46))
+		cg.Parent = card
+		local stroke = Widgets.stroke(card, C.ink, 2)
+		local art = Widgets.frame(card, {
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(0.62, 0.78),
+			Position = UDim2.fromScale(0.5, 0.02),
+			AnchorPoint = Vector2.new(0.5, 0),
+			ZIndex = 4,
+		})
+		Widgets.aspect(art, 44 / 40)
 		local cs = SpriteLibrary.get(id)
 		local pc = Canvas.small(art, cs.portrait.w, cs.portrait.h)
 		if pc then
-			pc.label.ZIndex = 3
-			pc.R.fill(pc.surface, Raster.rgb(48, 34, 74))
+			pc.label.ZIndex = 4
+			if pc.R.begin then
+				pc.R.begin(pc.surface)
+			end
+			pc.R.fill(pc.surface, Raster.rgb(52, 38, 82))
 			pc.R.sprite(pc.surface, cs.portrait, 0, 0, 1, cs.palettes[1])
 			pc.present()
 			table.insert(self.smallCanvases, pc)
 		end
-		Widgets.text(card, cfg.DisplayName, { Size = UDim2.fromScale(1, 0.11), Position = UDim2.fromScale(0, 0.78), ZIndex = 3 })
-		Widgets.text(
-			card,
-			cfg.Subtitle,
-			{ Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 0.89), TextColor3 = C.gold, ZIndex = 3 }
-		)
+		local short = cfg.DisplayName
+		if string.sub(id, 1, 5) == "Luffy" then
+			short = cfg.DisplayName .. " " .. (string.gsub(cfg.Subtitle, "GEAR ", "G"))
+		end
+		Widgets.text(card, short, { Size = UDim2.fromScale(0.96, 0.18), Position = UDim2.fromScale(0.02, 0.8), ZIndex = 4 })
+		local tagP1 = Widgets.text(card, "P1", {
+			Size = UDim2.fromScale(0.35, 0.2),
+			Position = UDim2.fromScale(0.02, -0.02),
+			TextColor3 = C.p1,
+			Visible = false,
+			ZIndex = 6,
+		})
+		local tagP2 = Widgets.text(card, "P2", {
+			Size = UDim2.fromScale(0.35, 0.2),
+			Position = UDim2.fromScale(0.63, -0.02),
+			TextColor3 = C.p2,
+			Visible = false,
+			ZIndex = 6,
+		})
 		card.MouseEnter:Connect(function()
 			self:moveCursorTo(i)
 		end)
@@ -233,74 +362,60 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 			self:moveCursorTo(i)
 			self:confirm()
 		end)
-		self.cards[i] = { card = card, stroke = stroke }
+		self.cards[i] = { card = card, stroke = stroke, p1 = tagP1, p2 = tagP2 }
 	end
 
-	-- stage select + actions (bottom)
-	local bottom = Widgets.frame(root, {
+	local actions = Widgets.frame(root, {
 		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(0.96, 0.2),
-		Position = UDim2.fromScale(0.02, 0.77),
-		ZIndex = 2,
+		Size = UDim2.fromScale(0.36, 0.06),
+		Position = UDim2.fromScale(0.5, 0.63),
+		AnchorPoint = Vector2.new(0.5, 0),
+		ZIndex = 3,
 	})
-	self.stageLabel =
-		Widgets.text(bottom, "", { Size = UDim2.fromScale(0.3, 0.3), Position = UDim2.fromScale(0.35, 0), TextColor3 = C.gold, ZIndex = 3 })
-	Widgets.button(bottom, "<", { Size = UDim2.fromScale(0.05, 0.3), Position = UDim2.fromScale(0.29, 0), ZIndex = 3 }, function()
-		self:cycleStage(-1)
-	end)
-	Widgets.button(bottom, ">", { Size = UDim2.fromScale(0.05, 0.3), Position = UDim2.fromScale(0.66, 0), ZIndex = 3 }, function()
-		self:cycleStage(1)
-	end)
-	self.status = Widgets.text(bottom, "", { Size = UDim2.fromScale(0.6, 0.22), Position = UDim2.fromScale(0.2, 0.36), ZIndex = 3 })
-	Widgets.button(bottom, "BACK", { Size = UDim2.fromScale(0.14, 0.3), Position = UDim2.fromScale(0.0, 0.66), ZIndex = 3 }, function()
+	local al = Instance.new("UIListLayout")
+	al.FillDirection = Enum.FillDirection.Horizontal
+	al.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	al.Padding = UDim.new(0.02, 0)
+	al.Parent = actions
+	Widgets.button(actions, "BACK", { Size = UDim2.fromScale(0.22, 1), ZIndex = 4 }, function()
 		self:back()
 	end)
-	self.moveBtn = Widgets.button(
-		bottom,
-		"MOVE LIST",
-		{ Size = UDim2.fromScale(0.18, 0.3), Position = UDim2.fromScale(0.41, 0.66), ZIndex = 3 },
-		function()
-			self:toggleMoves()
-		end
-	)
+	self.moveBtn = Widgets.button(actions, "MOVES", { Size = UDim2.fromScale(0.22, 1), ZIndex = 4 }, function()
+		self:toggleMoves()
+	end)
 	if opts.mode == "versus" then
-		self.p2Btn = Widgets.button(
-			bottom,
-			"P2: CPU",
-			{ Size = UDim2.fromScale(0.16, 0.3), Position = UDim2.fromScale(0.62, 0.66), ZIndex = 3 },
-			function()
-				self.p2Human = not self.p2Human
-				self.p2Btn.Text = if self.p2Human then "P2: HUMAN" else "P2: CPU"
-			end
-		)
+		self.p2Btn = Widgets.button(actions, "P2: CPU", { Size = UDim2.fromScale(0.26, 1), ZIndex = 4 }, function()
+			self.p2Human = not self.p2Human
+			self.p2Btn.Text = if self.p2Human then "P2: HUMAN" else "P2: CPU"
+			self:refresh()
+		end)
 	end
 	self.goBtn = Widgets.button(
-		bottom,
+		actions,
 		if opts.mode == "online" then "FIND MATCH" elseif opts.mode == "inspect" then "TRAIN" else "FIGHT!",
 		{
-			Size = UDim2.fromScale(0.18, 0.3),
-			Position = UDim2.fromScale(0.82, 0.66),
+			Size = UDim2.fromScale(0.28, 1),
 			BackgroundColor3 = C.red,
-			ZIndex = 3,
+			ZIndex = 4,
 		},
 		function()
 			self:confirm(true)
 		end
 	)
-	-- move list panel
+
 	self.movePanel = Widgets.frame(root, {
 		Visible = false,
-		Size = UDim2.fromScale(0.34, 0.6),
-		Position = UDim2.fromScale(0.5, 0.14),
+		Size = UDim2.fromScale(0.36, 0.5),
+		Position = UDim2.fromScale(0.5, 0.12),
 		AnchorPoint = Vector2.new(0.5, 0),
 		BackgroundColor3 = C.ink,
+		BackgroundTransparency = 0.05,
 		ZIndex = 20,
 	})
-	Widgets.stroke(self.movePanel, C.gold, 2)
+	Widgets.stroke(self.movePanel, GOLD, 2)
 	self.moveText = Widgets.text(self.movePanel, "", {
 		Size = UDim2.fromScale(0.96, 0.96),
 		Position = UDim2.fromScale(0.02, 0.02),
-		TextScaled = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
 		Font = Enum.Font.Code,
@@ -317,11 +432,20 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 			end
 		end
 	end
-	for s = 1, 2 do
-		local id = CharacterData.Order[self.cursor[s]]
-		task.spawn(SpriteLibrary.preload, id)
+	if opts.mode == "inspect" then
+		-- browse mode: the move list docks on the right instead of a second fighter
+		self.vs.Visible = false
+		self.showMoves = true
+		self.movePanel.Visible = true
+		self.movePanel.Size = UDim2.fromScale(0.62, 0.34)
+		self.movePanel.Position = UDim2.fromScale(0.66, 0.11)
+	elseif opts.mode == "online" then
+		self.vs.Visible = false
 	end
 	self:refresh()
+	Transition.slideIn(self.panels[1].box, UDim2.fromScale(-0.3, 0), 0.25)
+	Transition.slideIn(self.panels[2].box, UDim2.fromScale(0.3, 0), 0.25)
+	Transition.slideIn(strip, UDim2.fromScale(0, 0.2), 0.3)
 	self.conn = RunService.RenderStepped:Connect(function(dt)
 		self:step(dt)
 	end)
@@ -336,8 +460,12 @@ function CharacterSelect.moveCursorTo(self: any, i: number)
 	if self.phase == "done" then
 		return
 	end
-	self.cursor[self:activeSlot()] = i
-	self:refresh()
+	local slot = self:activeSlot()
+	if self.cursor[slot] ~= i then
+		self.cursor[slot] = i
+		Transition.pop(self.cards[i].card, 0.12)
+		self:refresh()
+	end
 end
 
 function CharacterSelect.cycleStage(self: any, d: number)
@@ -346,6 +474,9 @@ function CharacterSelect.cycleStage(self: any, d: number)
 end
 
 function CharacterSelect.toggleMoves(self: any)
+	if self.mode == "inspect" then
+		return
+	end
 	self.showMoves = not self.showMoves
 	self.movePanel.Visible = self.showMoves
 	self:refresh()
@@ -368,6 +499,8 @@ function CharacterSelect.confirm(self: any, fromButton: boolean?)
 	end
 	local slot = self:activeSlot()
 	self.picked[slot] = CharacterData.Order[self.cursor[slot]]
+	self.panels[slot].preview:play({ "Victory" })
+	Transition.pop(self.panels[slot].box, 0.05)
 	if mode == "online" or mode == "inspect" then
 		self.phase = "done"
 		local opp = CharacterData.Order[self.cursor[2]]
@@ -375,14 +508,13 @@ function CharacterSelect.confirm(self: any, fromButton: boolean?)
 		return
 	end
 	if slot == 1 then
-		self.phase = "p2"
 		if fromButton then
-			-- the FIGHT button skips straight to the fight with the current P2 cursor
 			self.picked[2] = CharacterData.Order[self.cursor[2]]
 			self.phase = "done"
 			self.opts.onConfirm(self.picked[1], self.picked[2], Stage.List[self.stageIndex], self.p2Human)
 			return
 		end
+		self.phase = "p2"
 		self:refresh()
 		return
 	end
@@ -391,57 +523,66 @@ function CharacterSelect.confirm(self: any, fromButton: boolean?)
 end
 
 function CharacterSelect.setStatus(self: any, text: string)
+	self.statusText = text
 	self.status.Text = text
 end
 
 function CharacterSelect.refresh(self: any)
-	local cols = 3
+	local solo = self.mode == "inspect" or self.mode == "online"
 	for i, c in self.cards do
 		local p1 = self.cursor[1] == i
-		local p2 = self.cursor[2] == i
-		c.stroke.Color = if p1 and p2 then C.gold elseif p1 then C.p1 elseif p2 then C.p2 else C.ink
+		local p2 = self.cursor[2] == i and not solo
+		c.stroke.Color = if p1 and p2 then GOLD elseif p1 then C.p1 elseif p2 then C.p2 else C.ink
 		c.stroke.Thickness = if p1 or p2 then 4 else 2
+		c.p1.Visible = p1
+		c.p2.Visible = p2
+		TweenService:Create(c.card, TweenInfo.new(0.12), {
+			BackgroundColor3 = if p1 or p2 then Color3.fromRGB(90, 60, 130) else Color3.fromRGB(40, 28, 64),
+		}):Play()
 	end
 	local stageName = Stage.List[self.stageIndex]
-	self.stageLabel.Text = "STAGE: " .. string.upper(stageName == "SkyIsland" and "SKY ISLAND" or stageName)
+	self.stageLabel.Text = "STAGE: " .. string.upper(if stageName == "SkyIsland" then "SKY ISLAND" else stageName)
 	local hints = {
-		versus = if self.phase == "p1" then "P1: A/D/W/S + 1 (or click) to pick" else "P2: arrows + N (or P1 keys) to pick",
-		training = if self.phase == "p1" then "Pick your fighter" else "Pick the training dummy",
-		online = "Pick your fighter, then FIND MATCH",
-		inspect = "Browse the roster. Previews show each fighter's attacks.",
+		versus = if self.phase == "p1" then "P1: PICK WITH A/D + 1  (OR CLICK)" else "P2: PICK WITH ARROWS + N  (OR P1 KEYS)",
+		training = if self.phase == "p1" then "PICK YOUR FIGHTER" else "PICK THE TRAINING DUMMY",
+		online = "PICK YOUR FIGHTER, THEN FIND MATCH",
+		inspect = "BROWSE THE ROSTER - PREVIEWS SHOW EACH FIGHTER'S MOVES",
 	}
-	if self.status.Text == "" or self.phase ~= "done" then
+	if self.phase ~= "done" or self.statusText == "" then
 		self.status.Text = hints[self.mode] or ""
 	end
 	for s = 1, 2 do
-		local pv = self.previews[s]
+		local pn = self.panels[s]
 		local id = CharacterData.Order[self.cursor[s]]
-		if pv.char ~= id then
-			pv.char = id
-			pv.t = 0
-			pv.cycle = 1
-			pv.cycleT = 0
-			task.spawn(SpriteLibrary.preload, id)
-		end
 		local cfg = CharacterData.get(id).config
-		pv.name.Text = cfg.DisplayName
-		pv.sub.Text = cfg.Subtitle
-		pv.style.Text = cfg.Style
-		pv.desc.Text = cfg.Description
+		if pn.char ~= id then
+			pn.char = id
+			local mirror = s == 2 and self.cursor[1] == self.cursor[2]
+			pn.preview:set(id, if mirror then 1 else 0, if s == 1 then 1 else -1)
+			if self.mode == "inspect" then
+				pn.preview:play(SHOWREEL)
+			end
+			Transition.pop(pn.name, 0.15)
+		end
+		pn.name.Text = cfg.DisplayName
+		pn.sub.Text = cfg.Subtitle
+		pn.style.Text = cfg.Style
+		pn.desc.Text = cfg.Description
+		local r = cfg.Ratings or { Power = 3, Speed = 3, Range = 3 }
+		for b, v in { r.Power, r.Speed, r.Range } do
+			for k, pip in pn.bars[b].pips do
+				pip.BackgroundColor3 = if k <= v then pn.bars[b].color else C.ink
+			end
+		end
 		if s == 2 then
-			local label = if self.mode == "training"
-				then "DUMMY"
-				elseif self.mode == "online" then "OPPONENT ?"
-				elseif self.p2Human then "P2"
-				else "CPU"
-			pv.tag.Text = label
-			pv.box.Visible = self.mode ~= "online"
+			pn.tag.Text = if self.mode == "training" then "DUMMY" elseif self.p2Human then "P2" else "CPU"
+			pn.box.Visible = not solo
 		end
 	end
 	if self.showMoves then
 		local id = CharacterData.Order[self.cursor[self:activeSlot()]]
 		local c = CharacterData.get(id)
-		local lines = { c.config.DisplayName .. " " .. c.config.Subtitle .. "  (startup/active/recovery)", "" }
+		local lines = { c.config.DisplayName .. " " .. c.config.Subtitle .. "   startup/active/recovery  dmg  hit/block", "" }
 		for _, mid in MOVE_ORDER do
 			local m = c.moves[mid]
 			if m then
@@ -449,18 +590,16 @@ function CharacterSelect.refresh(self: any)
 				table.insert(
 					lines,
 					string.format(
-						"%-8s %-22s %2d/%2d/%2d  %3d dmg  %s%d/%s%d%s",
+						"%-8s %-21s %2d/%2d/%2d %4d  %+d/%+d%s",
 						INPUT_NAMES[mid] or mid,
 						m.name,
 						m.startup,
 						m.active,
 						m.recovery,
 						m.damage * (if m.multi then m.multi.count else 1),
-						if hit >= 0 then "+" else "",
 						hit,
-						if blk >= 0 then "+" else "",
 						blk,
-						if m.height == "low" then "  LOW" elseif m.height == "high" then "  OVERHEAD" else ""
+						if m.height == "low" then " LOW" elseif m.height == "high" then " OVERHEAD" else ""
 					)
 				)
 			end
@@ -480,14 +619,9 @@ local function nav(self: any, edges: number)
 		i = (i - 2) % n + 1
 	elseif bit32.band(edges, Input.RIGHT) ~= 0 then
 		i = i % n + 1
-	elseif bit32.band(edges, Input.UP) ~= 0 then
-		i = (i - 4) % n + 1
-	elseif bit32.band(edges, Input.DOWN) ~= 0 then
-		i = (i + 2) % n + 1
 	end
 	if i ~= self.cursor[slot] then
-		self.cursor[slot] = i
-		self:refresh()
+		self:moveCursorTo(i)
 	end
 	if bit32.band(edges, Input.LIGHT) ~= 0 then
 		self:confirm()
@@ -495,60 +629,33 @@ local function nav(self: any, edges: number)
 		self:back()
 	elseif bit32.band(edges, Input.SPECIAL) ~= 0 then
 		self:toggleMoves()
-	elseif bit32.band(edges, Input.HEAVY) ~= 0 then
+	elseif bit32.band(edges, Input.HEAVY) ~= 0 or bit32.band(edges, Input.UP) ~= 0 then
 		self:cycleStage(1)
+	elseif bit32.band(edges, Input.DOWN) ~= 0 then
+		self:cycleStage(-1)
 	end
 end
 
 function CharacterSelect.step(self: any, dt: number)
 	nav(self, InputController.takeMenu())
-	-- animate previews at 60 fps
 	for s = 1, 2 do
-		local pv = self.previews[s]
-		local cv = pv.canvas
-		if cv and pv.char ~= "" and pv.box.Visible then
-			local cs = SpriteLibrary.get(pv.char)
-			local fd = cs.frameData
-			pv.t += dt * 60
-			local animName = "Idle"
-			if self.mode == "inspect" or self.showMoves then
-				animName = CYCLE[pv.cycle]
-				local a = fd[animName]
-				local len = Timeline.length(a)
-				local dur = if a.loop then 90 else len + 24
-				if pv.t > dur then
-					pv.t = 0
-					pv.cycle = pv.cycle % #CYCLE + 1
-					animName = CYCLE[pv.cycle]
+		local pn = self.panels[s]
+		if pn.box.Visible then
+			pn.preview:step(dt)
+			local mv = CharacterData.get(pn.char).moves[pn.preview.anim]
+			pn.moveLabel.Text = if self.mode == "inspect" and pn.preview.anim ~= "Idle"
+				then string.upper(if mv then mv.name else pn.preview.anim)
+				else ""
+			if self.mode == "inspect" and pn.preview.anim == "Idle" and #pn.preview.queue == 0 then
+				pn.idleWait += dt
+				if pn.idleWait > 2.5 then
+					pn.idleWait = 0
+					pn.preview:play(SHOWREEL)
 				end
-				local mv = CharacterData.get(pv.char).moves[animName]
-				pv.moveLabel.Text = if mv then string.upper(mv.name) else string.upper(animName)
-			else
-				pv.moveLabel.Text = ""
 			end
-			local anim = fd[animName] or fd.Idle
-			local row = Timeline.stateRow(anim, pv.t)
-			local frame = SpriteLibrary.sheet(cs, anim.sheet)[anim.frames[row].f]
-			local R = cv.R
-			if R.begin then
-				R.begin(cv.surface)
-			end
-			R.fill(cv.surface, Raster.rgb(40, 28, 64))
-			-- floor line
-			R.rect(cv.surface, 0, PREVIEW_H - 10, PREVIEW_W, 10, Raster.rgb(26, 18, 44))
-			local wide = frame.w > PREVIEW_W - 20
-			local ox = if wide then 40 else PREVIEW_W / 2
-			R.sprite(
-				cv.surface,
-				frame,
-				if s == 1 then ox else PREVIEW_W - ox,
-				PREVIEW_H - 10,
-				if s == 1 then 1 else -1,
-				cs.palettes[if s == 2 and self.cursor[1] == self.cursor[2] then 2 else 1]
-			)
-			cv.present()
 		end
 	end
+	self.vs.Rotation = math.sin(os.clock() * 2) * 3
 end
 
 function CharacterSelect.destroy(self: any)
@@ -558,10 +665,8 @@ function CharacterSelect.destroy(self: any)
 	for _, c in self.smallCanvases do
 		c.destroy()
 	end
-	for _, p in self.previews do
-		if p.canvas then
-			p.canvas.destroy()
-		end
+	for _, p in self.panels do
+		p.preview:destroy()
 	end
 	self.root:Destroy()
 end

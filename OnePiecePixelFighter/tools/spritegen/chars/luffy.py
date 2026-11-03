@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import math
 
-from body import Build, fist, foot, head_pt, head_poly, limb, sway, torso_poly
+from body import Build, crease, fist, hair_detail, joint, scaled, shoulder_cap, foot, head_pt, head_poly, limb, sway, torso_poly
+import faces
 from rig import Palette, add, mix, norm, sub
 
 
@@ -41,6 +42,8 @@ def palette(variant: str, alt: bool = False) -> Palette:
     p.ramp("steam", [(255, 255, 255), (238, 236, 246), (204, 200, 222)])
     p.named("white", (255, 255, 255))
     p.named("eye", (24, 14, 28))
+    p.named("iris", (52, 36, 44) if variant != "g5" else (40, 24, 32))
+    p.named("brow", (30, 22, 40) if variant != "g5" else (210, 214, 240))
     p.named("mouth", (150, 34, 48))
     p.named("tongue", (230, 96, 110))
     p.named("scar", (170, 70, 60))
@@ -52,15 +55,15 @@ def palette(variant: str, alt: bool = False) -> Palette:
 # --------------------------------------------------------------------------- #
 # builds
 # --------------------------------------------------------------------------- #
-BUILD_BASE = Build(thigh=16.5, shin=16.5, ankle=2.5, foot=6.0, torso=21, neck=2.6,
+BUILD_BASE = scaled(1.12, Build(thigh=16.5, shin=16.5, ankle=2.5, foot=6.0, torso=21, neck=2.6,
                    head_rx=7.4, head_ry=7.8, upper=11.5, fore=11, hand=2.6,
                    hip_w=9, sh_w=12.5, stance_w=17, thigh_r=3.5, shin_r=2.5,
-                   upper_r=2.7, fore_r=2.4)
+                   upper_r=2.7, fore_r=2.4))
 
-BUILD_G4 = Build(thigh=15, shin=15, ankle=2.6, foot=6.0, torso=24, neck=1.5,
+BUILD_G4 = scaled(1.06, Build(thigh=15, shin=15, ankle=2.6, foot=6.0, torso=24, neck=1.5,
                  head_rx=7.6, head_ry=7.9, upper=14, fore=14, hand=7.5,
                  hip_w=11, sh_w=26, stance_w=24, thigh_r=5.0, shin_r=4.0,
-                 upper_r=6.0, fore_r=7.0)
+                 upper_r=6.0, fore_r=7.0))
 
 
 # --------------------------------------------------------------------------- #
@@ -160,7 +163,9 @@ def _head(fr, sk, b, p, variant, tick, wind):
                (-5.5 + sw, -12.5), (-5 + sw * 1.6, -18 + flick[2]), (-1.5 + sw, -13.5), (0 + sw * 1.4, -19 + flick[3]),
                (2 + sw, -13), (5 + sw, -16 + flick[4]), (5.5, -10.5), (8.5 + sw * 0.6, -11 + flick[5]),
                (7.5, -5), (5, -3)]
-        fr.poly(head_poly(sk, b, pts), hr, z - 1, group="hair", soft=2)
+        hpw = head_poly(sk, b, pts)
+        fr.poly(hpw, hr, z - 1, group="hair", soft=2)
+        hair_detail(fr, hpw, sk.head, hr, z - 0.95)
         # cloud halo ring behind the head
         for k in range(9):
             a = math.radians(k * 40 + tick * 6)
@@ -172,7 +177,9 @@ def _head(fr, sk, b, p, variant, tick, wind):
         if variant == "g4":
             pts = [(-8, 3), (-11 + sw, 0), (-9 + sw, -3), (-13 + sw * 1.3, -5), (-8, -7.5), (-10 + sw, -11),
                    (-4, -9.8), (-3, -13.5), (1, -10), (4, -12.5), (6, -8), (8, -4), (6, -2), (-3, 4)]
-        fr.poly(head_poly(sk, b, pts), hr, z - 1, group="hair", soft=2)
+        hpw = head_poly(sk, b, pts)
+        fr.poly(hpw, hr, z - 1, group="hair", soft=2)
+        hair_detail(fr, hpw, sk.head, hr, z - 0.95)
     # head
     fr.ellipse(sk.head, b.head_rx, b.head_ry, skin, z, ang=sk.head_ang * 0.5, group="head")
     # jaw/chin bump forward
@@ -182,8 +189,8 @@ def _head(fr, sk, b, p, variant, tick, wind):
     expr = pose.get("expr", "neutral")
     if variant == "g5" and expr in ("neutral", "grin"):
         expr = "laugh"
-    face = FACES[expr]
-    fr.stamp(face, head_pt(sk, b, -1.0, -2.2), _face_cmap(p), z + 2)
+    face = faces.build("g5" if variant == "g5" else "luffy", expr)
+    fr.stamp(face, head_pt(sk, b, -3.4, -2.9 if variant == "g5" else -2.3), faces.cmap(p, skin), z + 2)
     if variant == "g4":
         # Gear 4 haki markings under the eyes
         fr.stamp(["kk", ".k"], head_pt(sk, b, 0.0, 2.6), {"k": p["haki"][2]}, z + 1.9)
@@ -194,7 +201,9 @@ def _head(fr, sk, b, p, variant, tick, wind):
     else:
         fringe = [(-6.5, -5), (-4.5, -2.2), (-3, -4.5), (-1.2, -1.6), (0.5, -4.0), (2.4, -1.4), (3.8, -4.2),
                   (5.8, -2.6), (7.5, -5), (6, -8), (-5, -8)]
-    fr.poly(head_poly(sk, b, fringe), hr, z + 3, group="hair", soft=1)
+    fpw = head_poly(sk, b, fringe)
+    fr.poly(fpw, hr, z + 3, group="hair", soft=1)
+    hair_detail(fr, fpw, sk.head, hr, z + 3.05, tips=[1, 3, 5, 7])
 
     if pose.get("hat", variant == "g2") and variant != "g5":
         _hat(fr, sk, b, p, z + 5, tick)
@@ -217,6 +226,8 @@ def _arm(fr, sk, b, p, side, z, variant, tick):
     if variant == "g4":
         # Boundman: huge haki arms, red upper arm, black-red forearm and giant fist
         limb(fr, sh, el, 5.4, 5.2, p["hakired"], z, group=grp, bias=bias)
+        shoulder_cap(fr, sh, el, 5.6, p["hakired"], z + 0.05, group=grp, bias=bias)
+        joint(fr, el, 5.6, p["haki"], z + 0.45, group=grp + "f", bias=bias)
         limb(fr, el, wr, 5.4, 7.2, p["haki"], z + 0.5, group=grp + "f", bias=bias)
         # flame pattern running down the forearm
         d = norm(sub(wr, el))
@@ -234,6 +245,8 @@ def _arm(fr, sk, b, p, side, z, variant, tick):
     ru = b.upper_r * (0.8 if st > 1.6 else 1.0)
     rl = b.fore_r * (0.75 if st > 1.6 else 1.0)
     limb(fr, sh, el, ru, rl + 0.2, p["skin"], z, group=grp, bias=bias)
+    shoulder_cap(fr, sh, el, ru, p["skin"], z + 0.05, group=grp, bias=bias)
+    joint(fr, el, rl + 0.25, p["skin"], z + 0.2, group=grp, bias=bias)
     limb(fr, el, wr, rl + 0.1, rl - 0.2, p["skin"], z + 0.3, group=grp, bias=bias)
     if variant == "g5":
         # white sleeve puff at shoulder
@@ -257,7 +270,9 @@ def _leg(fr, sk, b, p, side, z, variant):
     limb(fr, kn, an, b.shin_r, 2.0, p["skin"], z, group=grp, bias=bias)
     foot(fr, sk, side, p["skin"], z + 0.2, r=1.9, group=grp, bias=bias, sole=p["sandal"][1])
     # shorts leg (3/4 length) + white cuff
+    joint(fr, kn, b.shin_r + 0.3, p["skin"], z + 0.1, group=grp, bias=bias)
     limb(fr, hip, mix(hip, kn, 1.12), b.thigh_r + 0.9, b.thigh_r + 0.4, p["shorts"], z + 6, group="sh" + side, bias=bias)
+    crease(fr, hip, kn, an, p["shorts"][-1], z + 6.15)
     if variant != "g5":
         limb(fr, mix(hip, kn, 0.95), mix(hip, kn, 1.14), b.thigh_r + 1.1, b.thigh_r + 0.7, p["cuff"], z + 6.3, group="sh" + side, bias=bias, round_end=False)
 

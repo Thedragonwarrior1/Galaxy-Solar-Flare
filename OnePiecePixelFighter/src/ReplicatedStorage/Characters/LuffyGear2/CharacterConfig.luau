@@ -9,6 +9,7 @@ return {
 	Subtitle = "GEAR 2",
 	Style = "RUSHDOWN",
 	Description = "Blinding speed and short recovery. Stay in their face and chain Jet punches into the Gatling.",
+	Ratings = { Power = 3, Speed = 5, Range = 3 }, -- 1..5, shown on character select
 	Theme = { primary = { 214, 30, 42 }, accent = { 255, 150, 160 }, aura = "steam" },
 	Stats = {
 		Health = 950,

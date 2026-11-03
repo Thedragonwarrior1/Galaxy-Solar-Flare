@@ -7,12 +7,18 @@ This is a separate project from the browser game in the repository root.
 | | |
 |---|---|
 | **Fighters** | Luffy Gear 2 · Luffy Gear 4 · Luffy Gear 5 · Doflamingo · Enel · Zoro · Katakuri |
-| **Modes** | Online 1v1 · Training · Local Test Match (vs CPU or 2 players on one device) · Character Select (inspect) |
+| **Modes** | PLAY (Online 1v1 · VS CPU · 2 Players local) · Character Select (inspect) · Training · Settings |
 | **Stages** | Pirate Harbour (dusk) · Storm Deck (rain + lightning) · Sky Island Ruins |
 | **Input** | Keyboard, two gamepads, touch |
 | **Screen** | 320×180 virtual pixels, integer-scaled (×4 at 720p, ×6 at 1080p), nearest-neighbour |
 
 ![Gameplay frames rendered by the game's own Luau renderer](art/screenshots/gameplay.png)
+
+| Title screen | Character select | Fight HUD |
+|---|---|---|
+| ![](art/screenshots/ui_menu.png) | ![](art/screenshots/ui_select.png) | ![](art/screenshots/ui_versus.png) |
+
+The latest visual and animation overhaul is described in [docs/POLISH_UPDATE.md](docs/POLISH_UPDATE.md): improved pixel art, seven unique idle loops, rebuilt attacks with smear frames, character-specific impacts, and a redesigned menu, character select and HUD.
 
 *Frames rendered offline by the game's own Luau renderer during CPU matches. The HUD is Roblox GUI and isn't part of these captures.*
 

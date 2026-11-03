@@ -69,6 +69,7 @@ Protocol.Anims = {
 	"Special2",
 	"Counter",
 	"Super",
+	"HitGut",
 }
 Protocol.Projectiles = { "parasite", "birdcage", "vari", "elthor", "slash" }
 

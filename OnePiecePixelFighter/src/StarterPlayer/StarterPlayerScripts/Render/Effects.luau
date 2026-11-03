@@ -48,7 +48,83 @@ end
 -- ---------------------------------------------------------------------------
 -- spawners
 -- ---------------------------------------------------------------------------
-function Effects.hit(self: any, x: number, y: number, class: string, vfx: string?, counter: boolean?)
+local STYLE_COLORS = {
+	steam = { rgb(255, 240, 246), rgb(255, 120, 150) },
+	smoke = { rgb(255, 220, 220), rgb(170, 30, 50) },
+	cloud = { rgb(255, 255, 255), rgb(190, 150, 255) },
+	threads = { rgb(255, 255, 255), rgb(255, 120, 200) },
+	sparks = { rgb(255, 255, 255), rgb(120, 220, 255) },
+	slash = { rgb(255, 255, 255), rgb(130, 255, 140) },
+	mochi = { rgb(255, 252, 244), rgb(220, 200, 196) },
+}
+
+function Effects.hit(self: any, x: number, y: number, class: string, vfx: string?, counter: boolean?, style: string?)
+	local power = if class == "SU" then 3 elseif class == "H" or class == "SP" then 2 elseif class == "M" then 1 else 0
+	local sc = STYLE_COLORS[style or ""]
+	-- character-specific impact identities
+	if style == "smoke" then
+		self:add({ kind = "ring", x = x, y = y, life = 12 + power * 3, size = 5, grow = 2 + power * 0.6, c1 = sc[2], thick = 3 })
+		self:smoke(x, y, 2 + power * 2, "smoke")
+	elseif style == "cloud" then
+		self:add({ kind = "star", x = x, y = y, life = 10 + power * 2, size = 8 + power * 4, c1 = sc[1], c2 = sc[2], a = math.random() })
+		self:smoke(x, y, 1 + power, "smoke")
+	elseif style == "threads" then
+		self:add({ kind = "rays", x = x, y = y, life = 9 + power * 2, size = 12 + power * 6, c1 = sc[1], c2 = sc[2], a = math.random() * 6 })
+	elseif style == "sparks" then
+		for _ = 1, 2 + power do
+			self:add({ kind = "bolt", x = x, y = y, x2 = x + rnd(-28, 28), y2 = y + rnd(-28, 28), life = 7, c1 = sc[1], c2 = sc[2] })
+		end
+	elseif style == "slash" then
+		for k = 1, 1 + math.min(power, 2) do
+			self:add({
+				kind = "slashspark",
+				x = x + rnd(-3, 3),
+				y = y + rnd(-3, 3),
+				life = 10,
+				size = 14 + power * 6,
+				c1 = sc[1],
+				c2 = sc[2],
+				a = (k - 1.5) * 1.1 + rnd(-0.2, 0.2),
+			})
+		end
+	elseif style == "mochi" then
+		self:add({ kind = "splat", x = x, y = y, life = 14 + power * 2, size = 4 + power * 2, c1 = sc[1], c2 = sc[2] })
+		for _ = 1, 3 + power do
+			self:add({
+				kind = "puff",
+				x = x,
+				y = y,
+				vx = rnd(-1.6, 1.6),
+				vy = rnd(0.5, 2),
+				gravity = 0.15,
+				r = rnd(1.5, 2.5),
+				life = 26,
+				c1 = sc[1],
+				c2 = sc[2],
+			})
+		end
+	elseif style == "steam" then
+		for _ = 1, 2 + power do
+			self:add({
+				kind = "wisp",
+				x = x + rnd(-4, 4),
+				y = y + rnd(-4, 4),
+				vx = 0,
+				vy = rnd(0.5, 1),
+				curl = rnd(0, 6),
+				r = 2,
+				life = 20,
+				c1 = sc[1],
+				c2 = sc[2],
+			})
+		end
+	end
+	-- debris pixels for heavier hits
+	if power >= 2 and sc then
+		for _ = 1, 4 + power * 2 do
+			self:add({ kind = "bit", x = x, y = y, vx = rnd(-2.6, 2.6), vy = rnd(0.5, 3), gravity = 0.2, life = 22, c1 = sc[2] })
+		end
+	end
 	local big = if class == "H" or class == "SP" or class == "SU" then 1 else 0
 	local cols = Effects.Colors[class] or Effects.Colors.M
 	if vfx == "shock" or vfx == "kari" or vfx == "vari" or vfx == "elthor" then
@@ -169,8 +245,19 @@ function Effects.update(self: any)
 	for _, e in self.list do
 		e.age += 1
 		if e.vx then
+			if e.gravity then
+				e.vy -= e.gravity
+			end
+			if e.curl then
+				e.vx = math.sin(e.age * 0.2 + e.curl) * 0.4
+			end
 			e.x += e.vx
 			e.y += e.vy
+			if e.gravity and e.y < 0 then
+				e.y = 0
+				e.vy = -e.vy * 0.3
+				e.vx *= 0.6
+			end
 		end
 		if e.age < e.life then
 			table.insert(keep, e)
@@ -245,7 +332,7 @@ function Effects.draw(self: any, s: any, camX: number, floor: number, backend: a
 			R.line(s, x - ca * len, y - sa * len, x + ca * len, y + sa * len, e.c1, 1)
 			R.line(s, x + sa * len * 0.6, y - ca * len * 0.6, x - sa * len * 0.6, y + ca * len * 0.6, e.c1, 2)
 		elseif k == "ring" then
-			R.ring(s, x, y, e.size + e.age * (e.grow or 1.5), e.c1, if p < 0.5 then 2 else 1)
+			R.ring(s, x, y, e.size + e.age * (e.grow or 1.5), e.c1, if p < 0.5 then (e.thick or 2) else 1, e.ry)
 		elseif k == "arc" then
 			for i = -3, 3 do
 				local a = i * 0.32
@@ -260,6 +347,51 @@ function Effects.draw(self: any, s: any, camX: number, floor: number, backend: a
 				R.disc(s, x, y, r, e.c2)
 				R.disc(s, x - 1, y - 1, math.max(1, r - 1.5), e.c1)
 			end
+		elseif k == "wisp" then
+			local r = e.r * (1 + p * 1.6)
+			local fade = p > 0.6
+			if not fade or e.age % 2 == 0 then
+				R.disc(s, x, y, r, e.c2, fade)
+				R.disc(s, x - 1, y - 1, math.max(1, r - 1), e.c1, fade)
+			end
+		elseif k == "bit" then
+			if p < 0.8 or e.age % 2 == 0 then
+				R.rect(s, x, y, 2, 2, e.c1)
+			end
+		elseif k == "star" then
+			local r = e.size * (if p < 0.25 then p / 0.25 else 1)
+			for i = 0, 4 do
+				local a0 = e.a + i / 5 * math.pi * 2
+				local a1 = a0 + math.pi / 5
+				local a2 = a0 + math.pi * 2 / 5
+				local ox, oy = x + math.cos(a0) * r, y + math.sin(a0) * r
+				local ix, iy = x + math.cos(a1) * r * 0.45, y + math.sin(a1) * r * 0.45
+				local nx, ny = x + math.cos(a2) * r, y + math.sin(a2) * r
+				R.line(s, ox, oy, ix, iy, e.c2, 2)
+				R.line(s, ix, iy, nx, ny, e.c2, 2)
+			end
+			if p < 0.5 then
+				R.disc(s, x, y, r * 0.35, e.c1)
+			end
+		elseif k == "rays" then
+			local len = e.size * math.sin(math.min(1, p * 1.3) * math.pi)
+			for i = 0, 7 do
+				local a = e.a + i / 8 * math.pi * 2
+				R.line(
+					s,
+					x + math.cos(a) * 3,
+					y + math.sin(a) * 3,
+					x + math.cos(a) * len,
+					y + math.sin(a) * len,
+					if i % 2 == 0 then e.c1 else e.c2,
+					1
+				)
+			end
+		elseif k == "splat" then
+			local r = e.size * (0.6 + math.min(1, p * 2) * 0.8)
+			R.disc(s, x, y, r + 1, INK, p > 0.6)
+			R.disc(s, x, y, r, e.c2, p > 0.6)
+			R.disc(s, x - 1, y - 1, math.max(1, r - 1.5), e.c1, p > 0.6)
 		elseif k == "bolt" then
 			local segs = 6
 			local px, py = x, y

@@ -17,6 +17,7 @@ local Raster = require(script.Parent:WaitForChild("Raster"))
 
 local GuiRaster = setmetatable({}, { __index = Raster }) :: any
 GuiRaster.isGui = true
+GuiRaster.sinkColumn = false -- pixel shifting needs a framebuffer; CharacterFx draws an approximation instead
 
 local readu8 = buffer.readu8
 local readu32 = buffer.readu32
@@ -205,13 +206,14 @@ function GuiRaster.disc(s: GuiSurface, cx: number, cy: number, r: number, c: num
 	place(s, f, math.floor(cx) - r, math.floor(cy) - r, d, d)
 end
 
-function GuiRaster.ring(s: GuiSurface, cx: number, cy: number, r: number, c: number, thick: number?)
+function GuiRaster.ring(s: GuiSurface, cx: number, cy: number, r: number, c: number, thick: number?, ry: number?)
 	local f = prim(s, "ring")
 	local st = f:FindFirstChild("Stroke") :: UIStroke
 	st.Color = col(c)
 	st.Thickness = math.max(1, (thick or 1) * s.scale)
 	local d = r * 2 + 1
-	place(s, f, cx - r, cy - r, d, d)
+	local dy = d * (ry or 1)
+	place(s, f, cx - r, cy - dy / 2, d, dy)
 end
 
 function GuiRaster.darken(s: GuiSurface)

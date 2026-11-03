@@ -25,6 +25,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from animsets import REQUIRED, SETS  # noqa: E402
+from anims import F  # noqa: E402
+from body import lerp_pose  # noqa: E402
+from idles import IDLES  # noqa: E402
 from body import solve  # noqa: E402
 from encode import b64, lz4_compress, lz4_decompress  # noqa: E402
 from rig import Frame  # noqa: E402
@@ -41,10 +44,10 @@ SHEETS = {
     "Attacks": ["StandLight", "StandMedium", "StandHeavy", "CrouchLight", "CrouchMedium", "CrouchHeavy",
                 "AirLight", "AirMedium", "AirHeavy"],
     "Specials": ["Special", "Special2", "Counter", "Super"],
-    "Hit": ["Block", "CrouchBlock", "HitLight", "HitHeavy", "HitCrouch", "Launched", "Knockdown", "GetUp", "Defeat"],
+    "Hit": ["Block", "CrouchBlock", "HitLight", "HitGut", "HitHeavy", "HitCrouch", "Launched", "Knockdown", "GetUp", "Defeat"],
     "Victory": ["Victory"],
 }
-ANCHOR_KEYS = ["handN", "handF", "footN", "footF", "head", "chest", "bladeNTip", "bladeFTip", "bladeMTip",
+ANCHOR_KEYS = ["fingersN", "fingersF", "drum0", "drum1", "drum2", "drum3", "handN", "handF", "footN", "footF", "head", "chest", "bladeNTip", "bladeFTip", "bladeMTip",
                "bladeNBase", "bladeFBase", "bladeMBase", "staffTip", "staffBase", "weaponTip", "weaponBase"]
 
 CW, CH, OX, OY = 520, 300, 220, 270  # raster canvas (generous so stretched limbs never clip)
@@ -107,13 +110,103 @@ def hurt_boxes(sk, fr, b, spec, phase):
     return out
 
 
+def _extra(a, b, k):
+    """Pose beyond b, continuing the a->b motion by k (anticipation / overshoot)."""
+    return lerp_pose(a, b, 1 + k)
+
+
+def enrich_attack(an, stance):
+    """Anticipation -> execution in-betweens -> contact -> follow-through
+    overshoot -> recovery -> settle. Phases (and therefore hitbox timing) are
+    preserved: the extra frames are startup or recovery only."""
+    fr = an.frames
+    ai = next((i for i, f in enumerate(fr) if f["phase"] == "active"), None)
+    if ai is None:
+        return
+    first, act = fr[0], fr[ai]
+    out = []
+    antic = _extra(act["pose"], first["pose"], 0.22)
+    out.append(F(antic, max(1, first["dur"] // 2), "startup", first["wind"], first["sx"], first["sy"]))
+    pre_active = fr[ai - 1]["pose"] if ai > 0 else first["pose"]
+    follow_done = False
+    for i, f in enumerate(fr):
+        f = dict(f)
+        if i > 0:
+            prev = fr[i - 1]
+            if prev["phase"] == "active" and f["phase"] == "recovery" and not follow_done:
+                over = _extra(pre_active, prev["pose"], 0.2)
+                out.append(F(over, 3, "recovery", prev["wind"], prev["sx"], prev["sy"]))
+                out.append(F(lerp_pose(over, f["pose"], 0.5), 2, "recovery", f["wind"]))
+                follow_done = True
+            elif not (prev["phase"] == "active" and f["phase"] == "active"):
+                d = max(1, f["dur"] // 2)
+                ph = "startup" if f["phase"] == "active" else f["phase"]
+                out.append(F(lerp_pose(prev["pose"], f["pose"], 0.5), d, ph, f["wind"],
+                             (prev["sx"] + f["sx"]) / 2, (prev["sy"] + f["sy"]) / 2))
+                f["dur"] = max(1, f["dur"] - d)
+        out.append(f)
+    last = fr[-1]
+    if last["pose"].get("py", 0) == stance.get("py", 0) or True:
+        out.append(F(lerp_pose(last["pose"], stance, 0.7), 3, "recovery"))
+    an.frames = out
+
+
+def _local(fr, sk, name):
+    """Named point in pre-squash local space (x forward, y down)."""
+    if name in sk:
+        return sk[name]
+    a = fr.anchors.get(name)
+    if a is None:
+        return None
+    return (a[0] / fr.sx, -a[1] / fr.sy)
+
+
+def draw_smears(fr, sk, pal, strike, prev):
+    """Motion smear: a tapered streak from where the striking point was on the
+    previous frame to where it is now (blades sweep their whole arc)."""
+    ramp = pal["smear"]
+    pts = {}
+    for spec in strike:
+        if spec[0] != "seg":
+            continue
+        a, b = spec[1], spec[2]
+        pa, pb = _local(fr, sk, a), _local(fr, sk, b)
+        if pa is None or pb is None:
+            continue
+        pts[(a, b)] = (pa, pb)
+        if prev is None or (a, b) not in prev:
+            continue
+        qa, qb = prev[(a, b)]
+        dx, dy = pb[0] - qb[0], pb[1] - qb[1]
+        if dx * dx + dy * dy < 30:
+            continue
+        near = b.endswith("N") or "bladeN" in b or "bladeM" in b
+        z = 59.4 if near else 9.3
+        if "blade" in b or "staff" in b or "weapon" in b:
+            fr.poly([qa, qb, pb, pa], ramp, z, group="smear", soft=1, noline=True)
+        else:
+            L = math.hypot(dx, dy) or 1
+            nx, ny = -dy / L * 2.6, dx / L * 2.6
+            fr.poly([qb, (pb[0] + nx, pb[1] + ny), (pb[0] - nx, pb[1] - ny)], ramp, z, group="smear", soft=1, noline=True)
+    return pts
+
+
+SMEAR = [(255, 255, 255), (238, 236, 250), (206, 204, 232)]
+
+
 def render_char(cid, preview=True, write=True):
     c = ROSTER[cid]
     anims = SETS[cid](c)
+    anims["Idle"] = IDLES[cid](c.stance, c.build)
+    for name, an in anims.items():
+        if an.kind == "attack":
+            enrich_attack(an, c.stance)
     missing = [n for n in REQUIRED if n not in anims]
     assert not missing, (cid, missing)
     pal = c.palette(False)
     alt = c.palette(True)
+    pal.ramp("smear", SMEAR)
+    alt.ramp("smear", SMEAR)
     # identical index layouts are required for palette swaps
     assert len(pal.colors) == len(alt.colors), (cid, "alt palette size mismatch")
 
@@ -125,10 +218,16 @@ def render_char(cid, preview=True, write=True):
     for name, an in anims.items():
         sheet = next((s for s, ns in SHEETS.items() if name in ns), "Specials")
         rows = []
-        for f in an.frames:
+        prev_pts = None
+        nxt_phase = [f["phase"] for f in an.frames[1:]] + [None]
+        for fi_, f in enumerate(an.frames):
             fr = Frame(pal, CW, CH, OX, OY, sx=f["sx"], sy=f["sy"])
             sk = solve(c.build, f["pose"])
             c.draw(fr, sk, pal, tick=tick, wind=f["wind"])
+            if an.kind == "attack" and an.strike:
+                smear_now = f["phase"] == "active" or nxt_phase[fi_] == "active"
+                pts = draw_smears(fr, sk, pal, an.strike, prev_pts if smear_now else None)
+                prev_pts = pts
             tick += max(1, f["dur"] // 2)
             fr.finish()
             idx, xo, yo = fr.trimmed()
@@ -142,6 +241,10 @@ def render_char(cid, preview=True, write=True):
             row = {"f": fi, "d": f["dur"]}
             if phase:
                 row["p"] = {"startup": "s", "active": "a", "recovery": "r"}[phase]
+            if f.get("ev"):
+                row["ev"] = f["ev"]
+            if f.get("gb"):
+                row["gb"] = int(f["gb"])
             row["hurt"] = hurt_boxes(sk, fr, c.build, an.strike, phase)
             if phase == "active" and an.strike:
                 row["hit"] = strike_boxes(an.strike, sk, fr)
@@ -279,6 +382,10 @@ def _write(cid, c, pal, alt, per_sheet, anim_out, portrait, anims):
             parts = ["f=%d" % r["f"], "d=%d" % r["d"]]
             if "p" in r:
                 parts.append('p="%s"' % r["p"])
+            if "ev" in r:
+                parts.append('ev="%s"' % r["ev"])
+            if "gb" in r:
+                parts.append("gb=%d" % r["gb"])
             parts.append("hurt=" + _lua_box_list(r["hurt"]))
             if "hit" in r:
                 parts.append("hit=" + _lua_box_list(r["hit"]))

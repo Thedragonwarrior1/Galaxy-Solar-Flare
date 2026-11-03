@@ -12,7 +12,7 @@ from body import lerp_pose
 REQUIRED = [
     "Idle", "Walk", "WalkBack", "Crouch", "JumpSquat", "JumpRise", "JumpApex", "JumpFall", "Land",
     "DashForward", "DashBack", "Block", "CrouchBlock", "HitLight", "HitHeavy", "HitCrouch",
-    "Launched", "Knockdown", "GetUp", "Defeat", "Victory", "Intro",
+    "Launched", "Knockdown", "GetUp", "Defeat", "Victory", "Intro", "HitGut",
     "StandLight", "StandMedium", "StandHeavy", "CrouchLight", "CrouchMedium", "CrouchHeavy",
     "AirLight", "AirMedium", "AirHeavy", "Special", "Super",
 ]
@@ -459,7 +459,7 @@ def zoro(c):
                                F(P(C, aFu=60, aFl=60, wF=82, torso=C["torso"] + 6, expr="shout"), 4, "active"),
                                F(P(C, aFu=60, aFl=60, wF=60), 6, "recovery"), F(C, 8, "recovery")], [seg("bladeFBase", "bladeFTip", 3)])
     # crouch heavy: rising slash (launcher)
-    u1 = P(S, aFu=160, aFl=170, wF=175, aNu=150, aNl=170, wN=165, torso=-6, py=-6, fN=(S["fN"][0], -6), expr="shout")
+    u1 = P(S, aFu=130, aFl=145, wF=140, aNu=120, aNl=140, wN=128, torso=6, py=-6, fN=(S["fN"][0], -6), expr="shout")
     out["CrouchHeavy"] = atk([F(P(C, aFu=0, aFl=-20, wF=10, aNu=0, aNl=-20, wN=10), 5, "startup"), F(lerp_pose(C, u1, 0.5), 4, "startup"),
                               F(u1, 5, "active", sy=1.06), F(lerp_pose(u1, S, 0.4), 10, "recovery"), F(S, 10, "recovery")],
                              [seg("bladeFBase", "bladeFTip", 4), seg("bladeNBase", "bladeNTip", 4)])

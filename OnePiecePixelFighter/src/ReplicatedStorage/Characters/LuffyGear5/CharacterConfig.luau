@@ -10,6 +10,7 @@ return {
 	Subtitle = "GEAR 5",
 	Style = "TRICKSTER",
 	Description = "Toon physics. Double jump, rubber reach and the Drums of Liberation: meter builds fast and powers up the Toon Bounce.",
+	Ratings = { Power = 4, Speed = 4, Range = 4 }, -- 1..5, shown on character select
 	Theme = { primary = { 236, 238, 248 }, accent = { 150, 72, 200 }, aura = "cloud" },
 	Stats = {
 		Health = 1000,

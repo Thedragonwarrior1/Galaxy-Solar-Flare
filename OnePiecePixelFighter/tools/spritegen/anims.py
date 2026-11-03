@@ -22,8 +22,8 @@ class Anim:
         self.speed_ref = speed_ref
 
 
-def F(pose, dur, phase=None, wind=0.0, sx=1.0, sy=1.0):
-    return dict(pose=pose, dur=int(dur), phase=phase, wind=wind, sx=sx, sy=sy)
+def F(pose, dur, phase=None, wind=0.0, sx=1.0, sy=1.0, ev=None, gb=0):
+    return dict(pose=pose, dur=int(dur), phase=phase, wind=wind, sx=sx, sy=sy, ev=ev, gb=gb)
 
 
 def P(S, **kw):
@@ -114,7 +114,8 @@ def jump_set(S, b, rise=None, apex=None, fall=None, squat=None, land=None):
         "JumpRise": Anim([F(lerp_pose(squat, rise, 0.6), 3, sx=0.92, sy=1.1), F(rise, 6, sx=0.96, sy=1.05)]),
         "JumpApex": Anim([F(lerp_pose(rise, apex, 0.5), 4), F(apex, 6)]),
         "JumpFall": Anim([F(lerp_pose(apex, fall, 0.5), 4), F(fall, 6)], loop=False),
-        "Land": Anim([F(land, 3, sx=1.08, sy=0.92), F(lerp_pose(land, S, 0.6), 3)]),
+        "Land": Anim([F(land, 2, sx=1.1, sy=0.9, ev="dust"), F(P(land, py=land.get("py", 0) + 1.5), 2, sx=1.06, sy=0.94),
+                      F(lerp_pose(land, S, 0.5), 2), F(lerp_pose(land, S, 0.85), 2)]),
     }
 
 
@@ -140,28 +141,46 @@ def blocks(S, b, B, CB):
 
 def hits(S, b, C):
     L = leg_len(b)
-    hl = P(S, torso=S.get("torso", 0) - 16, head=-14, py=S.get("py", 0) + 2, expr="hurt",
-           aFu=S["aFu"] - 30, aFl=S["aFl"] - 50, aNu=S["aNu"] - 20, aNl=S["aNl"] - 40)
-    hh = P(S, torso=S.get("torso", 0) - 30, head=-18, py=S.get("py", 0) + 3, expr="shout",
-           aFu=-40, aFl=-10, aNu=-60, aNl=-20, fF=(S["fF"][0] + 4, S["fF"][1]))
+    py = S.get("py", 0)
+    to = S.get("torso", 0)
+    # face/high hit: head snaps back
+    hl0 = P(S, torso=to - 12, head=-18, py=py + 1, expr="hurt",
+            aFu=S["aFu"] - 30, aFl=S["aFl"] - 60, aNu=S["aNu"] - 25, aNl=S["aNl"] - 45, handN="open", handF="open")
+    hl1 = P(hl0, torso=to - 18, head=-22, py=py + 2)
+    # gut/body hit: doubles over
+    hg0 = P(S, torso=to + 26, head=18, py=py + 4, expr="shout",
+            aFu=10, aFl=-20, aNu=-5, aNl=-30, handN="open", handF="open",
+            fN=(S["fN"][0] - 3, S["fN"][1]))
+    hg1 = P(hg0, torso=to + 32, head=22, py=py + 5)
+    # heavy: thrown back, stagger step
+    hh0 = P(S, torso=to - 30, head=-20, py=py + 3, expr="shout",
+            aFu=-50, aFl=-20, aNu=-70, aNl=-30, handN="open", handF="open", fF=(S["fF"][0] + 4, S["fF"][1]))
+    hh1 = P(hh0, torso=to - 36, head=-24, fN=(S["fN"][0] - 6, S["fN"][1] - 3), tN=30)
+    hh2 = P(hh0, torso=to - 20, head=-12, fN=(S["fN"][0] - 8, S["fN"][1]), aFu=-20, aNu=-30)
     hc = P(C, torso=C.get("torso", 0) - 18, head=-12, expr="hurt", aFu=C["aFu"] - 30, aNu=C["aNu"] - 30)
     launch = P(S, torso=-55, head=-20, py=-10, fNr=(14, L * 0.6), fFr=(20, L * 0.45), tN=-30, tF=-20,
-               aFu=200, aFl=230, aNu=170, aNl=210, expr="shout")
+               aFu=200, aFl=230, aNu=170, aNl=210, expr="shout", handN="open", handF="open")
     tumble = P(launch, torso=-80, fNr=(18, L * 0.4), fFr=(24, L * 0.3), aFu=220, aNu=200)
+    spin = P(launch, torso=-100, fNr=(10, L * 0.25), fFr=(16, L * 0.2), aFu=240, aNu=230, head=-10)
     lie_py = (L + b.ankle) * b.height - 4.5
     lie = P(S, torso=-90, head=-6, py=lie_py, fNr=(L * 0.92, 2), fFr=(L * 0.98, 3), tN=-80, tF=-75,
             aFu=-100, aFl=-95, aNu=-75, aNl=-90, expr="ko", handN="open", handF="open")
-    bounce = P(lie, py=lie_py - 4, torso=-80, fNr=(L * 0.8, -3), fFr=(L * 0.9, -5))
-    kneel = P(S, torso=S.get("torso", 0) + 25, py=L * 0.45, fN=(-L * 0.45, -2.5), fF=(L * 0.3, -2.5),
+    bounce = P(lie, py=lie_py - 5, torso=-80, head=-14, fNr=(L * 0.8, -4), fFr=(L * 0.9, -7), aFu=-130, aNu=-60)
+    settle = P(lie, py=lie_py - 1.5, torso=-86, fNr=(L * 0.88, 0), fFr=(L * 0.95, 1))
+    prop = P(S, torso=-40, py=lie_py - 10, fNr=(L * 0.8, 6), fFr=(L * 0.6, -2), aNu=-120, aNl=-150, aFu=-90, aFl=-110,
+             handN="open", expr="angry")
+    kneel = P(S, torso=to + 25, py=L * 0.45, fN=(-L * 0.45, -2.5), fF=(L * 0.3, -2.5),
               aNu=40, aNl=0, aFu=70, aFl=20, expr="angry")
+    rise = lerp_pose(kneel, S, 0.6)
     return {
-        "HitLight": Anim([F(hl, 4), F(lerp_pose(hl, S, 0.5), 4)]),
-        "HitHeavy": Anim([F(hh, 5), F(lerp_pose(hh, S, 0.35), 5), F(lerp_pose(hh, S, 0.7), 4)]),
-        "HitCrouch": Anim([F(hc, 4), F(lerp_pose(hc, C, 0.5), 4)]),
-        "Launched": Anim([F(launch, 5), F(lerp_pose(launch, tumble, 0.5), 5), F(tumble, 8)], loop=False),
-        "Knockdown": Anim([F(bounce, 5), F(lie, 8)]),
-        "GetUp": Anim([F(lerp_pose(lie, kneel, 0.4), 6), F(kneel, 6), F(lerp_pose(kneel, S, 0.6), 5)]),
-        "Defeat": Anim([F(bounce, 6), F(lie, 10), F(P(lie, head=-2), 30)]),
+        "HitLight": Anim([F(hl0, 3), F(hl1, 4), F(lerp_pose(hl1, S, 0.45), 4), F(lerp_pose(hl1, S, 0.8), 3)]),
+        "HitGut": Anim([F(hg0, 3), F(hg1, 5), F(lerp_pose(hg1, S, 0.45), 4), F(lerp_pose(hg1, S, 0.8), 3)]),
+        "HitHeavy": Anim([F(hh0, 4), F(hh1, 5), F(hh2, 5), F(lerp_pose(hh2, S, 0.6), 4)]),
+        "HitCrouch": Anim([F(hc, 4), F(P(hc, torso=hc["torso"] - 5), 3), F(lerp_pose(hc, C, 0.5), 4)]),
+        "Launched": Anim([F(launch, 5), F(lerp_pose(launch, tumble, 0.5), 4), F(tumble, 5), F(spin, 8)], loop=False),
+        "Knockdown": Anim([F(bounce, 4, ev="bigdust"), F(lerp_pose(bounce, lie, 0.5), 3), F(settle, 4), F(lie, 8)]),
+        "GetUp": Anim([F(prop, 5), F(lerp_pose(prop, kneel, 0.5), 4), F(kneel, 5), F(rise, 4), F(lerp_pose(rise, S, 0.7), 3)]),
+        "Defeat": Anim([F(bounce, 5, ev="bigdust"), F(settle, 6), F(lie, 10), F(P(lie, head=-2), 30)]),
     }
 
 

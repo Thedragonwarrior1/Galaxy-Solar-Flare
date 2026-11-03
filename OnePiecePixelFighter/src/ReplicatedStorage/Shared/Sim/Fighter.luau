@@ -50,6 +50,12 @@ function Fighter.new(slot: number, char: any, x: number, facing: number, palette
 		vy = 0,
 		pvx = 0, -- pushback / knockback velocity on the ground
 		facing = facing,
+		-- head height (from the idle frame) decides face vs body hit reactions
+		height = (
+			char.frameData.Idle.frames[1].anc
+			and char.frameData.Idle.frames[1].anc.head
+			and char.frameData.Idle.frames[1].anc.head[2]
+		) or 70,
 		hp = stats.Health,
 		maxHp = stats.Health,
 		meter = 0,

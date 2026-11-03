@@ -9,6 +9,7 @@ return {
 	Subtitle = "SANTORYU",
 	Style = "SWORDSMAN",
 	Description = "Close-to-mid range blade pressure. Multi-hit slashes, the advancing Oni Giri and a flying 36 Pound Cannon.",
+	Ratings = { Power = 4, Speed = 3, Range = 3 }, -- 1..5, shown on character select
 	Theme = { primary = { 78, 150, 74 }, accent = { 220, 255, 220 }, aura = "slash" },
 	Stats = {
 		Health = 1000,

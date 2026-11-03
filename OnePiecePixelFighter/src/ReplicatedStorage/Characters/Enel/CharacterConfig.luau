@@ -9,6 +9,7 @@ return {
 	Subtitle = "GOD OF SKYPIEA",
 	Style = "ZONER",
 	Description = "Keeps you at range with Vari bolts, blinks with Mantra Step (DOWN + SPECIAL) and calls down El Thor.",
+	Ratings = { Power = 4, Speed = 3, Range = 5 }, -- 1..5, shown on character select
 	Theme = { primary = { 250, 210, 80 }, accent = { 120, 220, 255 }, aura = "sparks" },
 	Stats = {
 		Health = 950,

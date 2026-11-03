@@ -29,10 +29,12 @@ local ResultsScreen = require(UI:WaitForChild("ResultsScreen"))
 local TrainingPanel = require(UI:WaitForChild("TrainingPanel"))
 local PauseMenu = require(UI:WaitForChild("PauseMenu"))
 local MobileControls = require(UI:WaitForChild("MobileControls"))
+local Transition = require(UI:WaitForChild("TransitionController"))
 local Controllers = script.Parent:WaitForChild("Controllers")
 local InputController = require(Controllers:WaitForChild("InputController"))
 local CameraController = require(Controllers:WaitForChild("CameraController"))
 local AudioController = require(Controllers:WaitForChild("AudioController"))
+local Settings = require(Controllers:WaitForChild("Settings"))
 local Sessions = script.Parent:WaitForChild("Sessions")
 local LocalSession = require(Sessions:WaitForChild("LocalSession"))
 local OnlineSession = require(Sessions:WaitForChild("OnlineSession"))
@@ -59,6 +61,17 @@ local gui: ScreenGui
 local canvas: any
 local mobile: any
 local remotes: any
+
+local function go(fn: () -> ())
+	Transition.run(fn)
+end
+
+local function featuredText(s: any): string
+	local m = s.match
+	local a = CharacterData.get(m.fighters[1].id).config
+	local b = CharacterData.get(m.fighters[2].id).config
+	return "FEATURING  " .. a.DisplayName .. " " .. a.Subtitle .. "  VS  " .. b.DisplayName .. " " .. b.Subtitle
+end
 
 local function clearScreen()
 	InputController.clear()
@@ -116,29 +129,50 @@ function App.showMenu()
 	state.screen = "menu"
 	setMobile(false)
 	local ids = CharacterData.Order
-	local a, b = ids[math.random(1, #ids)], ids[math.random(1, #ids)]
+	local a = ids[math.random(1, #ids)]
+	local b = ids[(table.find(ids, a) :: number) % #ids + 1]
 	local stages = { "Harbour", "Storm", "SkyIsland" }
 	local stage = stages[math.random(1, #stages)]
-	startSession(LocalSession.new({ mode = "attract", p1 = a, p2 = b, stage = stage }), stage)
+	local session = LocalSession.new({ mode = "showcase", p1 = a, p2 = b, stage = stage })
+	startSession(session, stage)
 	state.screen = "menu"
 	state.menu = MainMenu.new(gui, {
 		online = function()
-			App.showSelect("online")
+			go(function()
+				App.showSelect("online")
+			end)
+		end,
+		vsCpu = function()
+			go(function()
+				App.showSelect("versus", false)
+			end)
+		end,
+		versus2p = function()
+			go(function()
+				App.showSelect("versus", true)
+			end)
 		end,
 		training = function()
-			App.showSelect("training")
-		end,
-		versus = function()
-			App.showSelect("versus")
+			go(function()
+				App.showSelect("training")
+			end)
 		end,
 		inspect = function()
-			App.showSelect("inspect")
+			go(function()
+				App.showSelect("inspect")
+			end)
+		end,
+		settingsChanged = function(key: string)
+			if key == "renderer" then
+				App.rebuildCanvas()
+			end
 		end,
 	})
+	state.menu:setFeatured(featuredText(session))
 	AudioController.music("menu")
 end
 
-function App.showSelect(mode: string)
+function App.showSelect(mode: string, p2Human: boolean?)
 	endSession()
 	clearScreen()
 	setMobile(false)
@@ -152,7 +186,7 @@ function App.showSelect(mode: string)
 			if mode == "online" and remotes then
 				remotes.Match:FireServer({ op = "cancel" })
 			end
-			App.showMenu()
+			go(App.showMenu)
 		end,
 		onConfirm = function(p1: string, p2: string, stage: string, p2Human: boolean)
 			if mode == "online" then
@@ -166,9 +200,16 @@ function App.showSelect(mode: string)
 				return
 			end
 			local m = if mode == "inspect" then "training" else mode
-			App.startLocal({ mode = m, p1 = p1, p2 = p2, stage = stage, p2Human = p2Human })
+			go(function()
+				App.startLocal({ mode = m, p1 = p1, p2 = p2, stage = stage, p2Human = p2Human })
+			end)
 		end,
 	})
+	if p2Human and state.select.p2Btn then
+		state.select.p2Human = true
+		state.select.p2Btn.Text = "P2: HUMAN"
+		state.select:refresh()
+	end
 end
 
 function App.startLocal(setup: any)
@@ -176,6 +217,8 @@ function App.startLocal(setup: any)
 	state.lastMode = setup.mode
 	SpriteLibrary.preload(setup.p1)
 	SpriteLibrary.preload(setup.p2)
+	setup.difficulty = Settings.cpuDifficulty
+	setup.roundTime = Settings.roundTime
 	local session = LocalSession.new(setup)
 	startSession(session, setup.stage)
 	state.screen = "fight"
@@ -212,23 +255,43 @@ function App.showResults(view: any)
 				remotes.Match:FireServer({ op = "rematch" })
 				state.results:setStatus("WAITING FOR OPPONENT...")
 			else
-				App.startLocal(state.lastSetup)
+				go(function()
+					App.startLocal(state.lastSetup)
+				end)
 			end
 		end,
 		select = function()
 			if online then
 				remotes.Match:FireServer({ op = "leave" })
 			end
-			App.showSelect(if online then "online" else (state.lastMode or "versus"))
+			go(function()
+				App.showSelect(if online then "online" else (state.lastMode or "versus"), state.lastSetup and state.lastSetup.p2Human)
+			end)
 		end,
 		menu = function()
 			if online then
 				remotes.Match:FireServer({ op = "leave" })
 			end
-			App.showMenu()
+			go(App.showMenu)
 		end,
 	})
 	setMobile(false)
+end
+
+function App.rebuildCanvas()
+	endSession()
+	clearScreen()
+	if canvas then
+		canvas:destroy()
+	end
+	Canvas.ForceGui = Settings.renderer == "gui"
+	canvas = Canvas.new(gui, CombatConfig.ScreenWidth, CombatConfig.ScreenHeight, "Screen")
+	state.renderer = nil
+	layout()
+	App.showMenu()
+	if state.menu then
+		state.menu:toggleSettings()
+	end
 end
 
 function App.togglePause()
@@ -248,10 +311,12 @@ function App.togglePause()
 			App.togglePause()
 		end,
 		select = function()
-			App.showSelect(state.lastMode or "versus")
+			go(function()
+				App.showSelect(state.lastMode or "versus", state.lastSetup and state.lastSetup.p2Human)
+			end)
 		end,
 		menu = function()
-			App.showMenu()
+			go(App.showMenu)
 		end,
 	})
 end
@@ -269,7 +334,9 @@ local function onMatchMessage(msg: any)
 			state.select:setStatus("SEARCHING FOR AN OPPONENT...  (" .. tostring(msg.waiting or 1) .. " IN QUEUE)")
 		end
 	elseif op == "start" then
-		App.startOnline(msg)
+		go(function()
+			App.startOnline(msg)
+		end)
 	elseif op == "opponentLeft" then
 		if state.session and state.session.kind == "online" then
 			local v = state.session:getView()
@@ -307,8 +374,12 @@ local function frame(dt: number)
 	s:update(dt)
 	if s.restarted then
 		s.restarted = false
-		state.renderer:setStage(s.opts.stage)
+		state.renderer:setStage(s.stage or s.opts.stage)
+		if state.menu then
+			state.menu:setFeatured(featuredText(s))
+		end
 	end
+	state.renderer.shakeScale = if Settings.screenShake then 1 else 0
 	local view = s:getView()
 	if not view then
 		return
@@ -391,6 +462,7 @@ function App.start()
 		)
 		return
 	end
+	Transition.init(gui)
 	mobile = MobileControls.new(gui)
 	gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(layout)
 	layout()

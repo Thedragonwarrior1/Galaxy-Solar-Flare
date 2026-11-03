@@ -7,6 +7,11 @@ local roblox = require("@lune/roblox")
 local T = require("./t")
 local Mock = require("./robloxmock")
 local H = require("./harness")
+local Snap = require("./uisnap")
+local snapImages = {}
+local function snap(name)
+	Snap.dump(name, snapImages)
+end
 
 local K = roblox.Enum.KeyCode
 local function frames(n, dt)
@@ -20,9 +25,18 @@ local function findButton(root, text)
 		if found then
 			return
 		end
-		if rawget(inst, "__props") and inst.__props.Text == text and inst.__class == "TextButton" then
-			found = inst
-			return
+		if rawget(inst, "__props") and inst.__class == "TextButton" and inst.__props.Visible ~= false then
+			if inst.__props.Text == text then
+				found = inst
+				return
+			end
+			-- menu entries keep their caption in a child label
+			for _, c in inst.__children do
+				if c.__class == "TextLabel" and c.__props.Text == text then
+					found = inst
+					return
+				end
+			end
 		end
 		local kids = rawget(inst, "__children")
 		if kids then
@@ -220,18 +234,33 @@ T.test("client boots into the main menu with an attract match", function()
 	else
 		T.ok(Mock.images[1].writes >= 200, "canvas presented " .. Mock.images[1].writes .. " frames")
 	end
-	T.ok(findButton(Mock.playerGui, "ONLINE 1V1"))
+	T.ok(findButton(Mock.playerGui, "PLAY"))
 	T.ok(findButton(Mock.playerGui, "TRAINING"))
-	T.ok(findButton(Mock.playerGui, "LOCAL TEST MATCH"))
+	T.ok(findButton(Mock.playerGui, "SETTINGS"))
 	T.ok(findButton(Mock.playerGui, "CHARACTER SELECT"))
+	click("PLAY")
+	frames(2)
+	T.ok(findButton(Mock.playerGui, "ONLINE 1V1"))
+	T.ok(findButton(Mock.playerGui, "VS CPU"))
+	T.ok(findButton(Mock.playerGui, "2 PLAYERS (LOCAL)"))
+	click("BACK")
+	frames(2)
+	click("SETTINGS")
+	frames(2)
+	click("SCREEN SHAKE: ON")
+	click("CPU LEVEL: NORMAL")
+	click("CLOSE")
+	frames(2)
 	dump("menu")
+	snap("menu")
 	dumpGui("menu")
 end)
 
 T.test("character select (inspect) cycles previews and move list", function()
 	click("CHARACTER SELECT")
 	frames(200)
-	click("MOVE LIST")
+	snap("select")
+	click("MOVES")
 	frames(30)
 	Mock.press(K.D)
 	Mock.release(K.D)
@@ -253,7 +282,7 @@ T.test("training: pick fighters, attack, toggle hitboxes, reset, pause", functio
 	Mock.press(K.J)
 	Mock.release(K.J) -- dummy pick
 	frames(10)
-	T.ok(findButton(Mock.playerGui, "RESET POSITIONS (R)"), "training panel visible")
+	T.ok(findButton(Mock.playerGui, "RESET (R)"), "training panel visible")
 	Mock.press(K.H)
 	Mock.release(K.H)
 	for _ = 1, 6 do
@@ -273,6 +302,7 @@ T.test("training: pick fighters, attack, toggle hitboxes, reset, pause", functio
 	Mock.release(K.R)
 	frames(30)
 	dump("training")
+	snap("training")
 	dumpGui("training")
 	Mock.press(K.P)
 	Mock.release(K.P)
@@ -288,7 +318,9 @@ T.test("training: pick fighters, attack, toggle hitboxes, reset, pause", functio
 end)
 
 T.test("local test match vs CPU plays to the results screen and rematches", function()
-	click("LOCAL TEST MATCH")
+	click("PLAY")
+	frames(2)
+	click("VS CPU")
 	frames(5)
 	click("FIGHT!")
 	frames(5)
@@ -308,11 +340,14 @@ T.test("local test match vs CPU plays to the results screen and rematches", func
 		frames(1)
 		if guard == 900 then
 			dump("versus")
+			snap("versus")
 		end
 	end
 	Mock.keysDown[K.D] = nil
 	T.ok(findButton(Mock.playerGui, "REMATCH"), "results never appeared")
 	dump("results")
+	frames(40)
+	snap("results")
 	noWarnings("versus")
 	click("REMATCH")
 	frames(60)
@@ -325,6 +360,8 @@ end)
 
 T.test("online 1v1 against the real server services through mock remotes", function()
 	-- the App connected to remotes at boot before they existed; rebind like a fresh client
+	click("PLAY")
+	frames(2)
 	click("ONLINE 1V1")
 	frames(5)
 	-- App.start grabbed remotes only if they existed at boot: make sure it can queue

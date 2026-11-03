@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import math
 
-from body import Build, fist, foot, head_pt, head_poly, limb, sway, torso_poly
+from body import Build, crease, fist, hair_detail, joint, scaled, shoulder_cap, foot, head_pt, head_poly, limb, sway, torso_poly
+import faces
 from rig import Palette, add, mix, norm, sub, vdir
 
 
@@ -24,16 +25,18 @@ def palette(alt=False):
     p.ramp("gold", [(255, 236, 140), (224, 180, 70), (160, 116, 40)])
     p.named("white", (255, 255, 255))
     p.named("eye", (18, 16, 26))
+    p.named("iris", (40, 44, 40))
+    p.named("brow", (62, 120, 70))
     p.named("scar", (170, 80, 70))
     p.named("mouth", (130, 40, 50))
     p.named("earring", (255, 220, 90))
     return p
 
 
-BUILD = Build(thigh=18.5, shin=18, ankle=2.6, foot=6.5, torso=23, neck=3,
+BUILD = scaled(1.12, Build(thigh=18.5, shin=18, ankle=2.6, foot=6.5, torso=23, neck=3,
               head_rx=7.0, head_ry=7.6, upper=12.5, fore=12, hand=2.7,
               hip_w=10, sh_w=14, stance_w=20, thigh_r=3.9, shin_r=3.0,
-              upper_r=3.1, fore_r=2.7, height=0.9)
+              upper_r=3.1, fore_r=2.7, height=0.9))
 
 FACES = {
     "neutral": [
@@ -108,6 +111,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
     # far arm + sword
     bias = -0.2
     limb(fr, sk.shF, sk.elF, 3.0, 2.8, p["shirt"], 10, group="armF", bias=bias)
+    shoulder_cap(fr, sk.shF, sk.elF, 3.2, p["shirt"], 10.05, group="armF", bias=bias)
     limb(fr, sk.elF, sk.wrF, 2.7, 2.3, skin, 10.3, group="armF", bias=bias)
     c = fist(fr, sk, "F", 2.6, skin, 10.6, group="armF", bias=bias)
     if pose.get("swF", True):
@@ -117,6 +121,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         limb(fr, sk["knee" + side], sk["ankle" + side], 3.4, 3.0, p["boot"], z, group="leg" + side, bias=bs)
         foot(fr, sk, side, p["boot"], z + 0.2, r=2.4, group="leg" + side, bias=bs)
         limb(fr, sk["hip" + side], sk["knee" + side], 4.4, 3.6, p["pants"], z + 6, group="pl" + side, bias=bs)
+        crease(fr, sk["hip" + side], sk["knee" + side], sk["ankle" + side], p["pants"][-1], z + 6.4)
         limb(fr, sk["knee" + side], mix(sk["knee" + side], sk["ankle" + side], 0.5), 3.6, 3.4, p["pants"], z + 6, group="pl" + side, bias=bs)
     # torso: white shirt, green haramaki, dark waist
     z = 35
@@ -139,6 +144,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         limb(fr, sk["knee" + side], sk["ankle" + side], 3.4, 3.0, p["boot"], z2, group="leg" + side, bias=bs)
         foot(fr, sk, side, p["boot"], z2 + 0.2, r=2.4, group="leg" + side, bias=bs)
         limb(fr, sk["hip" + side], sk["knee" + side], 4.4, 3.6, p["pants"], z2 + 6, group="pl" + side, bias=bs)
+        crease(fr, sk["hip" + side], sk["knee" + side], sk["ankle" + side], p["pants"][-1], z2 + 6.4)
         limb(fr, sk["knee" + side], mix(sk["knee" + side], sk["ankle" + side], 0.5), 3.6, 3.4, p["pants"], z2 + 6, group="pl" + side, bias=bs)
     # head
     zh = 50
@@ -151,22 +157,28 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         fr.dot(head_pt(sk, b, -3.6, 2.4 + i * 1.2), p["earring"], zh + 0.4)
     expr = pose.get("expr", "neutral")
     cm = {"k": p["eye"], "w": p["white"], "r": p["scar"], "m": p["mouth"]}
-    fr.stamp(FACES[expr], head_pt(sk, b, -1.5, -2.6), cm, zh + 2)
+    fr.stamp(faces.build("zoro", expr), head_pt(sk, b, -3.4, -3.8), faces.cmap(p, skin), zh + 2)
     if pose.get("bandana", True):
         tl = sway(tick, 14, 1.0) - wind * 2
         bd = head_poly(sk, b, [(-7.8, -0.5), (-8.2, -5), (-5, -8.6), (1, -9.2), (6.2, -6.6), (7.2, -3.6), (2, -4.2), (-4, -2.2)])
         fr.poly(bd, p["bandana"], zh + 3, group="bandana", soft=2)
+        # bandana knot folds
+        fr.line(head_pt(sk, b, -6.5, -2), head_pt(sk, b, -2, -7.6), p["bandana"][-1], zh + 3.1)
+        fr.line(head_pt(sk, b, -3, -1.6), head_pt(sk, b, 3, -6.6), p["bandana"][0], zh + 3.1)
         for (u, v) in ((-11 + tl, 0.5), (-12 + tl * 1.4, 4)):
             fr.capsule(head_pt(sk, b, -7.5, -1.5), head_pt(sk, b, u, v), 1.6, 1.0, p["bandana"], zh - 3, group="tail")
     else:
         hp = head_poly(sk, b, [(-7.8, 0), (-8.2, -5), (-5, -8.6), (1, -9.2), (6.2, -6.6), (7.2, -3.6), (4, -5.8), (1, -4.5), (-2, -6), (-4, -2.2)])
         fr.poly(hp, p["hair"], zh + 3, group="hair", soft=2)
+        hair_detail(fr, hp, sk.head, p["hair"], zh + 3.05)
     # mouth sword (Wado Ichimonji) - held in the teeth, blade toward the front
     if pose.get("swM", True):
         mpos = head_pt(sk, b, 5.5, 4.2)
         sword(fr, p, mpos, pose.get("wM", 95), pose.get("lenM", 23), "wado", zh + 4, "bladeM", "swM")
     # near arm + sword
     limb(fr, sk.shN, sk.elN, 3.1, 2.9, p["shirt"], 60, group="armN")
+    shoulder_cap(fr, sk.shN, sk.elN, 3.3, p["shirt"], 60.05, group="armN")
+    crease(fr, sk.shN, sk.elN, sk.wrN, p["shirt"][-1], 60.1, n=1)
     limb(fr, sk.elN, sk.wrN, 2.8, 2.4, skin, 60.3, group="armN")
     c = fist(fr, sk, "N", 2.7, skin, 60.6, group="armN")
     if pose.get("swN", True):

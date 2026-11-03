@@ -11,6 +11,7 @@ local Raster = require(script.Parent:WaitForChild("Raster"))
 local SpriteLibrary = require(script.Parent:WaitForChild("SpriteLibrary"))
 local Stage = require(script.Parent:WaitForChild("Stage"))
 local Effects = require(script.Parent:WaitForChild("Effects"))
+local CharacterFx = require(script.Parent:WaitForChild("CharacterFx"))
 
 local Renderer = {}
 Renderer.__index = Renderer
@@ -32,8 +33,10 @@ function Renderer.new(surface: any, stageName: string, backend: any?)
 		moveByAnim = {},
 		frameCount = 0,
 		hitboxes = false, -- training overlay
+		shakeScale = 1,
 		dbg = nil :: any,
 	}, Renderer)
+	self.cfx = CharacterFx.new(self.fx)
 	return self
 end
 
@@ -64,7 +67,9 @@ function Renderer.onEvents(self: any, view: any)
 	for _, e in view.events or {} do
 		local t = e.type
 		if t == "hit" then
-			fx:hit(e.x, e.y, e.class or "M", e.vfx, e.counter)
+			local att = e.by and view.fighters[e.by]
+			local style = att and CharacterData.get(att.char).config.Theme.aura
+			fx:hit(e.x, e.y, e.class or "M", e.vfx, e.counter, style)
 			fx.shake = math.max(fx.shake, (SHAKE[e.class] or 1) + (e.shake or 0) * 0.5)
 			if e.slot then
 				self.flash[e.slot] = if e.class == "SU" or e.class == "H" then 4 else 3
@@ -139,55 +144,8 @@ function Renderer.fighterExtras(self: any, i: number, f: any, cs: any, frame: an
 	local t = self.frameCount + i * 3
 	local anc = row and row.anc or {}
 
-	-- character auras
-	if aura == "steam" and t % 9 == 0 and not f.ko then
-		local x, y = anchorWorld(f, anc.chest)
-		if x then
-			fx:add({
-				kind = "puff",
-				x = x + math.random(-8, 8),
-				y = y + math.random(-6, 10),
-				vx = math.random(-5, 5) / 20,
-				vy = 0.7,
-				r = 2.5,
-				life = 22,
-				c1 = Effects.Colors.steam[1],
-				c2 = Effects.Colors.steam[2],
-			})
-		end
-	elseif aura == "smoke" and t % 5 == 0 and not f.ko then
-		fx:add({
-			kind = "puff",
-			x = f.x + math.random(-22, 22),
-			y = f.y + math.random(40, 72),
-			vx = 0,
-			vy = 0.4,
-			r = 3,
-			life = 20,
-			c1 = Effects.Colors.smoke[1],
-			c2 = Effects.Colors.smoke[2],
-		})
-	elseif aura == "cloud" and t % 7 == 0 and not f.ko then
-		local x, y = anchorWorld(f, anc.head)
-		if x then
-			fx:add({
-				kind = "puff",
-				x = x + math.random(-14, 14),
-				y = y + math.random(-6, 12),
-				vx = math.random(-5, 5) / 15,
-				vy = 0.3,
-				r = 2,
-				life = 26,
-				c1 = rgb(255, 255, 255),
-				c2 = rgb(220, 226, 250),
-			})
-		end
-	elseif aura == "sparks" and t % 11 == 0 and not f.ko then
-		local x, y = anchorWorld(f, anc.chest)
-		if x then
-			fx:bolt(x + math.random(-12, 12), y + math.random(-14, 20), x + math.random(-18, 18), y + math.random(-20, 24), 4)
-		end
-	end
+	-- idle loops, auras and frame events live in CharacterFx
+	self.cfx:update(i, f, row)
 
 	if f.state ~= "attack" then
 		return
@@ -391,9 +349,10 @@ function Renderer.draw(self: any, view: any)
 
 	self:onEvents(view)
 	local shx, shy = 0, 0
-	if fx.shake > 0 then
-		shx = math.floor((math.random() - 0.5) * fx.shake * 2 + 0.5)
-		shy = math.floor((math.random() - 0.5) * fx.shake * 1.4 + 0.5)
+	if fx.shake > 0 and self.shakeScale > 0 then
+		local k = fx.shake * self.shakeScale
+		shx = math.floor((math.random() - 0.5) * k * 2 + 0.5)
+		shy = math.floor((math.random() - 0.5) * k * 1.4 + 0.5)
 	end
 
 	local R = self.R
@@ -441,10 +400,26 @@ function Renderer.draw(self: any, view: any)
 	if f1.state == "attack" and f2.state ~= "attack" then
 		order = { 2, 1 }
 	end
-	for _, i in order do
+	-- pass 1: resolve frames + run per-fighter effect logic
+	local drawn = {}
+	for i = 1, 2 do
 		local f = view.fighters[i]
 		local cs = SpriteLibrary.get(f.char)
 		local frame, row = SpriteLibrary.frame(cs, f.anim, f.row)
+		drawn[i] = { cs = cs, frame = frame, row = row }
+		if frame then
+			self:fighterExtras(i, f, cs, frame, row)
+		end
+	end
+	-- pass 2: ground layers (Gear 5's bouncing floor) under both fighters
+	for i = 1, 2 do
+		self.cfx:drawGround(R, s, i, view.fighters[i], camX, floor, shx, shy, stage.tint)
+	end
+	-- pass 3: sprites + attached effects
+	for _, i in order do
+		local f = view.fighters[i]
+		local d = drawn[i]
+		local cs, frame, row = d.cs, d.frame, d.row
 		if frame then
 			local pal = cs.palettes[(f.palette or 0) + 1] or cs.palettes[1]
 			local solid = nil
@@ -453,13 +428,13 @@ function Renderer.draw(self: any, view: any)
 				self.flash[i] -= 1
 			end
 			local sx, sy = f.x - camX + shx, floor - f.y + shy
-			self:fighterExtras(i, f, cs, frame, row)
-			self.R.sprite(s, frame, sx, sy, f.facing, pal, solid, if solid then cs.flashOutline else nil)
+			R.sprite(s, frame, sx, sy, f.facing, pal, solid, if solid then cs.flashOutline else nil)
+			self.cfx:drawAttached(R, s, i, f, row, camX - shx, floor + shy)
 			if f.bound then
 				-- Parasite threads hold the victim like a puppet
 				local pink = rgb(255, 150, 210)
 				for k = -2, 2 do
-					self.R.line(s, sx + k * 6, 0, sx + k * 5, sy - 60 + math.abs(k) * 8, pink, 1, true)
+					R.line(s, sx + k * 6, 0, sx + k * 5, sy - 60 + math.abs(k) * 8, pink, 1, true)
 				end
 			end
 			if self.hitboxes and row then

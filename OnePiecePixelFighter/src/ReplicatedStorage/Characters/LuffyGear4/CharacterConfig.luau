@@ -9,6 +9,7 @@ return {
 	Subtitle = "GEAR 4",
 	Style = "POWERHOUSE",
 	Description = "Boundman. Deliberate and heavy: long Kong punches, crushing knockback and a chargeable Kong Gun.",
+	Ratings = { Power = 5, Speed = 2, Range = 4 }, -- 1..5, shown on character select
 	Theme = { primary = { 140, 20, 36 }, accent = { 255, 255, 255 }, aura = "smoke" },
 	Stats = {
 		Health = 1100,

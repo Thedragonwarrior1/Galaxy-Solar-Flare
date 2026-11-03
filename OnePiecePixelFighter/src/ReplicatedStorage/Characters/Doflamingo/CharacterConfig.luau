@@ -10,6 +10,7 @@ return {
 	Subtitle = "HEAVENLY YAKSHA",
 	Style = "CONTROL",
 	Description = "Controls space with long thread attacks. Parasite binds the opponent in place; Birdcage leaves no room to run.",
+	Ratings = { Power = 3, Speed = 3, Range = 5 }, -- 1..5, shown on character select
 	Theme = { primary = { 246, 112, 176 }, accent = { 255, 255, 255 }, aura = "threads" },
 	Stats = {
 		Health = 1000,

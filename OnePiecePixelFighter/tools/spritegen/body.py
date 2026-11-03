@@ -37,6 +37,13 @@ class Build:
     height: float = 0.955  # pelvis height as fraction of full leg length
 
 
+def scaled(k: float, b: "Build") -> "Build":
+    """Uniformly scale a build's proportions (more pixels -> more detail room)."""
+    from dataclasses import fields
+    vals = {f.name: (getattr(b, f.name) if f.name == "height" else getattr(b, f.name) * k) for f in fields(b)}
+    return Build(**vals)
+
+
 def ease(t, kind):
     if kind == "in":
         return t * t
@@ -175,23 +182,99 @@ def limb(fr, a, b_, ra, rb, ramp, z, group=None, bias=0.0, **kw):
 
 
 def fist(fr, sk, side, r, ramp, z, group=None, bias=0.0, shape="fist", knuckle=None):
+    """Hands with readable structure: knuckle row, finger crease and thumb on a
+    fist; fanned fingers on an open hand; curled fingers on a claw."""
     c = sk["hand" + side]
-    dirv = sk["handdir" + side]
+    d = sk["handdir" + side]
+    n = (-d[1], d[0])
+    a = math.degrees(math.atan2(d[1], d[0]))
+    hi = ramp[0]
+    dk = ramp[-1]
     if shape == "fist":
-        fr.ellipse(c, r * 1.05, r * 0.95, ramp, z, ang=ang_of(dirv) * 0 + math.degrees(math.atan2(dirv[1], dirv[0])), group=group, bias=bias)
+        fr.ellipse(c, r * 1.12, r * 0.98, ramp, z, ang=a, group=group, bias=bias)
+        # knuckles: a lit ridge across the front of the fist
+        k0 = add(c, d, r * 0.62)
+        fr.line(add(k0, n, -r * 0.62), add(k0, n, r * 0.62), hi, z + 0.12)
+        # finger crease behind the knuckles
+        k1 = add(c, d, r * 0.1)
+        fr.line(add(k1, n, -r * 0.7), add(k1, n, r * 0.55), dk, z + 0.12)
+        # thumb wrapping over the fingers
+        fr.capsule(add(add(c, d, -r * 0.25), n, r * 0.78), add(add(c, d, r * 0.35), n, r * 0.62),
+                   max(0.9, r * 0.36), max(0.8, r * 0.3), ramp, z + 0.2, group=group, bias=bias + 0.1)
         if knuckle is not None:
-            fr.dot(add(c, dirv, r * 0.55), knuckle, z + 0.1)
-    elif shape == "open":
-        fr.capsule(sk["wr" + side], add(sk["wr" + side], dirv, r * 2.3), r * 0.8, r * 0.6, ramp, z, group=group, bias=bias)
-    elif shape == "claw":
-        w = sk["wr" + side]
-        fr.ellipse(c, r, r * 0.85, ramp, z, group=group, bias=bias)
-        for da in (-35, 0, 35):
-            a = math.atan2(dirv[1], dirv[0]) + math.radians(da)
-            fr.capsule(c, (c[0] + math.cos(a) * r * 2.2, c[1] + math.sin(a) * r * 2.2), r * 0.45, r * 0.3, ramp, z, group=group, bias=bias)
+            fr.dot(add(c, d, r * 0.55), knuckle, z + 0.13)
+    elif shape in ("open", "claw", "point"):
+        palm = add(c, d, -r * 0.1)
+        fr.ellipse(palm, r * 0.95, r * 0.85, ramp, z, ang=a, group=group, bias=bias)
+        spread = (-34, -11, 11, 34)
+        for i, da in enumerate(spread):
+            if shape == "point" and i != 1:
+                continue
+            ang = math.radians(a + da)
+            base = add(palm, (math.cos(ang), math.sin(ang)), r * 0.55)
+            ln = r * (1.45 if shape != "claw" else 0.85) * (0.85 if i in (0, 3) else 1.0)
+            if shape == "point":
+                ln = r * 1.9
+            tip = add(base, (math.cos(ang), math.sin(ang)), ln)
+            fr.capsule(base, tip, max(0.55, r * 0.26), max(0.5, r * 0.2), ramp, z + 0.1, group=group, bias=bias)
+            if shape == "claw":
+                # second joint curls down toward the palm
+                ang2 = ang + math.radians(55)
+                fr.capsule(tip, add(tip, (math.cos(ang2), math.sin(ang2)), r * 0.7), max(0.5, r * 0.22), max(0.45, r * 0.18),
+                           ramp, z + 0.11, group=group, bias=bias)
+        if shape == "point":
+            for da in (-25, 0, 25):
+                ang = math.radians(a + da + 70)
+                fr.ellipse(add(palm, (math.cos(ang), math.sin(ang)), r * 0.45), r * 0.4, r * 0.35, ramp, z + 0.05, group=group, bias=bias)
+        # thumb
+        ta = math.radians(a + 72)
+        fr.capsule(add(palm, (math.cos(ta), math.sin(ta)), r * 0.5), add(palm, (math.cos(ta - 0.5), math.sin(ta - 0.5)), r * 1.5),
+                   max(0.6, r * 0.3), max(0.5, r * 0.22), ramp, z + 0.15, group=group, bias=bias + 0.05)
+        anchor_tip = add(palm, d, r * 1.9)
+        fr.anchors.setdefault("fingers" + side, (round(anchor_tip[0] * fr.sx, 1), round(-anchor_tip[1] * fr.sy, 1)))
     elif shape == "grip":
-        fr.ellipse(c, r * 0.95, r * 0.95, ramp, z, group=group, bias=bias)
+        fr.ellipse(c, r * 1.0, r * 0.95, ramp, z, ang=a, group=group, bias=bias)
+        k0 = add(c, d, r * 0.4)
+        fr.line(add(k0, n, -r * 0.7), add(k0, n, r * 0.7), dk, z + 0.12)
     return c
+
+
+def joint(fr, p, r, ramp, z, group=None, bias=0.0):
+    """Rounded elbow/knee/shoulder mass so limbs are not plain tubes."""
+    fr.ellipse(p, r, r * 0.92, ramp, z, group=group, bias=bias)
+
+
+def shoulder_cap(fr, sh, el, r, ramp, z, group=None, bias=0.0):
+    """Deltoid: a slightly larger mass at the top of the upper arm."""
+    c = mix(sh, el, 0.18)
+    d = norm(sub(el, sh))
+    fr.ellipse(c, r * 1.18, r * 1.0, ramp, z, ang=math.degrees(math.atan2(d[1], d[0])), group=group, bias=bias)
+
+
+def crease(fr, a, b, c_, color, z, n=2):
+    """Fabric fold lines at a bend (hip->knee->ankle or shoulder->elbow->wrist)."""
+    d1 = norm(sub(b, a))
+    d2 = norm(sub(c_, b))
+    nb = norm((d1[0] + d2[0], d1[1] + d2[1]))
+    pn = (-nb[1], nb[0])
+    for k in range(n):
+        o = (k - (n - 1) / 2) * 1.6
+        p0 = add(add(b, nb, o - 1.5), pn, -2.2)
+        p1 = add(add(b, nb, o), pn, 0.6)
+        fr.line(p0, p1, color, z)
+
+
+def hair_detail(fr, pts, centre, ramp, z, tips=None):
+    """Strand clusters: shade lines from spike tips toward the scalp + highlights."""
+    idx = tips if tips is not None else range(len(pts))
+    for i in idx:
+        if i >= len(pts):
+            continue
+        t = pts[i]
+        inner = mix(t, centre, 0.42)
+        fr.line(mix(t, centre, 0.12), inner, ramp[-1], z)
+        if t[1] < centre[1]:
+            fr.dot(mix(t, centre, 0.28), ramp[0], z + 0.01)
 
 
 def foot(fr, sk, side, ramp, z, r=2.0, group=None, bias=0.0, sole=None):

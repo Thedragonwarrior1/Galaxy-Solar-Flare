@@ -13,28 +13,28 @@ TrainingPanel.__index = TrainingPanel
 local DUMMY_MODES = { "stand", "crouch", "jump", "block", "cpu" }
 
 function TrainingPanel.new(parent: Instance, session: any, renderer: any)
+	-- compact bar along the bottom edge, below the fighters' feet
 	local root = Widgets.frame(parent, {
 		Name = "Training",
-		Size = UDim2.fromScale(0.24, 0.5),
-		Position = UDim2.fromScale(0.99, 0.24),
-		AnchorPoint = Vector2.new(1, 0),
+		Size = UDim2.fromScale(0.98, 0.12),
+		Position = UDim2.fromScale(0.01, 0.87),
 		BackgroundColor3 = C.ink,
 		BackgroundTransparency = 0.25,
 		ZIndex = 20,
 	})
 	Widgets.stroke(root, C.gold, 1)
+	local row = Widgets.frame(
+		root,
+		{ BackgroundTransparency = 1, Size = UDim2.fromScale(0.62, 0.8), Position = UDim2.fromScale(0.01, 0.1), ZIndex = 21 }
+	)
 	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0.015, 0)
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.Padding = UDim.new(0.01, 0)
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = root
+	layout.Parent = row
 	local self = setmetatable({ root = root, session = session, renderer = renderer, dummyIndex = 1 }, TrainingPanel)
 	local function btn(text: string, order: number, fn: () -> ()): TextButton
-		return Widgets.button(
-			root,
-			text,
-			{ Size = UDim2.fromScale(1, 0.1), LayoutOrder = order, ZIndex = 21, TextXAlignment = Enum.TextXAlignment.Left },
-			fn
-		)
+		return Widgets.button(row, text, { Size = UDim2.fromScale(0.192, 1), LayoutOrder = order, ZIndex = 22 }, fn)
 	end
 	self.dummyBtn = btn("", 1, function()
 		self:cycleDummy()
@@ -52,14 +52,14 @@ function TrainingPanel.new(parent: Instance, session: any, renderer: any)
 		t.infiniteMeter = not t.infiniteMeter
 		self:refresh()
 	end)
-	btn("RESET POSITIONS (R)", 5, function()
+	btn("RESET (R)", 5, function()
 		session:resetPositions()
 	end)
 	self.info = Widgets.text(root, "", {
-		Size = UDim2.fromScale(1, 0.4),
-		LayoutOrder = 6,
+		Size = UDim2.fromScale(0.35, 0.9),
+		Position = UDim2.fromScale(0.64, 0.05),
 		TextXAlignment = Enum.TextXAlignment.Left,
-		TextYAlignment = Enum.TextYAlignment.Top,
+		TextYAlignment = Enum.TextYAlignment.Center,
 		Font = Enum.Font.Code,
 		TextStrokeTransparency = 1,
 		ZIndex = 21,
@@ -82,9 +82,9 @@ end
 function TrainingPanel.refresh(self: any)
 	local t = self.session.match.training
 	self.dummyBtn.Text = "DUMMY: " .. string.upper(DUMMY_MODES[self.dummyIndex]) .. " (T)"
-	self.boxBtn.Text = "HITBOXES: " .. (if self.renderer.hitboxes then "ON" else "OFF") .. " (H)"
-	self.hpBtn.Text = "INFINITE HEALTH: " .. (if t.infiniteHealth then "ON" else "OFF")
-	self.meterBtn.Text = "INFINITE METER: " .. (if t.infiniteMeter then "ON" else "OFF")
+	self.boxBtn.Text = "BOXES: " .. (if self.renderer.hitboxes then "ON" else "OFF") .. " (H)"
+	self.hpBtn.Text = "INF HP: " .. (if t.infiniteHealth then "ON" else "OFF")
+	self.meterBtn.Text = "INF METER: " .. (if t.infiniteMeter then "ON" else "OFF")
 end
 
 function TrainingPanel.update(self: any)
@@ -94,16 +94,26 @@ function TrainingPanel.update(self: any)
 	local lines = {}
 	if mv then
 		local hit, blk = AttackDefinitions.advantage(mv)
-		table.insert(lines, string.upper(mv.name))
-		table.insert(lines, string.format("startup %d  active %d  recov %d", mv.startup, mv.active, mv.recovery))
-		table.insert(lines, string.format("on hit %+d  on block %+d", hit, blk))
-		table.insert(lines, string.format("frame %d / %d", me.curFrame + 1, mv.startup + mv.active + mv.recovery))
+		table.insert(
+			lines,
+			string.format(
+				"%s  %d/%d/%d  hit %+d blk %+d  f%d",
+				string.upper(mv.name),
+				mv.startup,
+				mv.active,
+				mv.recovery,
+				hit,
+				blk,
+				me.curFrame + 1
+			)
+		)
 	else
-		table.insert(lines, "LAST: " .. string.upper(me.lastMoveName ~= "" and me.lastMoveName or "-"))
+		table.insert(
+			lines,
+			"LAST: " .. string.upper(me.lastMoveName ~= "" and me.lastMoveName or "-") .. "   STATE " .. string.upper(me.state)
+		)
 	end
-	table.insert(lines, string.format("combo %d hits  %d dmg", dummy.combo, dummy.comboDamage))
-	table.insert(lines, string.format("dummy hp %d / %d", dummy.hp, dummy.maxHp))
-	table.insert(lines, "state " .. me.state .. "  meter " .. math.floor(me.meter))
+	table.insert(lines, string.format("COMBO %d HITS  %d DMG   DUMMY %d/%d", dummy.combo, dummy.comboDamage, dummy.hp, dummy.maxHp))
 	self.info.Text = table.concat(lines, "\n")
 end
 

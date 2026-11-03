@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import math
 
-from body import Build, fist, foot, head_pt, head_poly, limb, sway, torso_poly
+from body import Build, crease, fist, hair_detail, joint, scaled, shoulder_cap, foot, head_pt, head_poly, limb, sway, torso_poly
+import faces
 from rig import Palette, add, mix, norm, sub, vdir
 
 
@@ -22,16 +23,17 @@ def palette(alt=False):
     p.ramp("hair", [(255, 244, 180), (240, 214, 120), (200, 164, 80)])
     p.named("white", (255, 255, 255))
     p.named("eye", (26, 16, 34))
+    p.named("iris", (60, 50, 40))
     p.named("mouth", (140, 40, 50))
     p.named("tomoe", (120, 40, 40))
     p.named("brow", (220, 180, 90))
     return p
 
 
-BUILD = Build(thigh=21, shin=20.5, ankle=2.6, foot=6.8, torso=25, neck=3.6,
+BUILD = scaled(1.06, Build(thigh=21, shin=20.5, ankle=2.6, foot=6.8, torso=25, neck=3.6,
               head_rx=6.8, head_ry=8.2, upper=14, fore=13, hand=2.7,
               hip_w=10, sh_w=15, stance_w=18, thigh_r=4.6, shin_r=3.2,
-              upper_r=2.9, fore_r=2.5, height=0.93)
+              upper_r=2.9, fore_r=2.5, height=0.93))
 
 FACES = {
     "neutral": [
@@ -108,6 +110,8 @@ def _drums(fr, sk, b, p, tick):
     for k in range(4):
         a = math.radians(160 - k * 46)
         dc = add(c, (math.cos(a) * rx, -math.sin(a) * ry))
+        dc = add(dc, (0, math.sin(tick * 0.25 + k * 1.3) * 0.8))
+        fr.anchor("drum%d" % k, dc)
         fr.ellipse(dc, 5.0, 4.6, p["rim"], 5, group="drum%d" % k)
         fr.ellipse(add(dc, (0.4, -0.2)), 3.8, 3.4, p["drum"], 5.2, group="drum%d" % k)
         # tomoe swirl
@@ -121,6 +125,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         _drums(fr, sk, b, p, tick)
     # far arm + gold armband
     limb(fr, sk.shF, sk.elF, 2.9, 2.6, skin, 10, group="armF", bias=-0.2)
+    shoulder_cap(fr, sk.shF, sk.elF, 3.0, skin, 10.05, group="armF", bias=-0.2)
     limb(fr, sk.elF, sk.wrF, 2.6, 2.2, skin, 10.3, group="armF", bias=-0.2)
     limb(fr, mix(sk.elF, sk.wrF, 0.55), mix(sk.elF, sk.wrF, 0.8), 2.7, 2.5, p["gold"], 10.4, group="bandF", bias=-0.2, round_end=False)
     c = fist(fr, sk, "F", 2.5, skin, 10.6, group="armF", bias=-0.2, shape=pose.get("handF", "fist"))
@@ -140,6 +145,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         limb(fr, mix(kn, an, 0.6), an, 2.6, 2.3, skin, z, group="leg" + side, bias=bias)
         foot(fr, sk, side, skin, z + 0.2, r=2.0, group="leg" + side, bias=bias)
         limb(fr, hip, kn, 5.6, 5.0, p["pants"], z + 6, group="pl" + side, bias=bias)
+        crease(fr, hip, kn, an, p["pants"][-1], z + 6.4, n=3)
         limb(fr, kn, mix(kn, an, 0.7), 5.0, 4.0, p["pants"], z + 6, group="pl" + side, bias=bias)
         d = norm(sub(kn, hip))
         n = (-d[1], d[0])
@@ -151,10 +157,11 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
     fr.ellipse(sk.head, b.head_rx, b.head_ry, skin, zh, ang=sk.head_ang * 0.5, group="head")
     fr.ellipse(head_pt(sk, b, 3.0, 3.8), 3.6, 3.8, skin, zh, group="head")
     # the famous long earlobes
-    fr.capsule(head_pt(sk, b, -3.0, 0), head_pt(sk, b, -3.4, 8.5), 1.6, 2.2, skin, zh + 0.3, group="ear", bias=-0.1)
+    lobe = sway(tick, 18, 0.9) - wind
+    fr.capsule(head_pt(sk, b, -3.0, 0), head_pt(sk, b, -3.4 + lobe, 8.5), 1.6, 2.2, skin, zh + 0.3, group="ear", bias=-0.1)
     expr = pose.get("expr", "neutral")
     cm = {"k": p["eye"], "w": p["white"], "t": p["white"], "m": p["mouth"], "b": p["brow"]}
-    fr.stamp(FACES[expr], head_pt(sk, b, -1.6, -3.4), cm, zh + 2)
+    fr.stamp(faces.build("enel", expr), head_pt(sk, b, -3.4, -4.4), faces.cmap(p, skin, {"b": p["brow"]}), zh + 2)
     # white head cloth with sideburn hair
     cl = head_poly(sk, b, [(-7.6, 1.5), (-8.2, -4), (-5.4, -9.4), (1, -10.4), (6.2, -8), (7.4, -4.4), (5, -4.2), (-2, -3.8), (-5, -1)])
     fr.poly(cl, p["cloth"], zh + 3, group="cloth", soft=2)
@@ -163,6 +170,8 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
     fr.capsule(head_pt(sk, b, -7.8, -1), head_pt(sk, b, -11 + tl, 4), 1.8, 1.2, p["cloth"], zh - 3, group="clothtail")
     # near arm
     limb(fr, sk.shN, sk.elN, 3.0, 2.7, skin, 60, group="armN")
+    shoulder_cap(fr, sk.shN, sk.elN, 3.2, skin, 60.05, group="armN")
+    joint(fr, sk.elN, 2.8, skin, 60.2, group="armN")
     limb(fr, sk.elN, sk.wrN, 2.7, 2.3, skin, 60.3, group="armN")
     limb(fr, mix(sk.elN, sk.wrN, 0.55), mix(sk.elN, sk.wrN, 0.8), 2.8, 2.6, p["gold"], 60.4, group="bandN", round_end=False)
     fist(fr, sk, "N", 2.6, skin, 60.6, group="armN", shape=pose.get("handN", "fist"))

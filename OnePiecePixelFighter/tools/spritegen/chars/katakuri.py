@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import math
 
-from body import Build, fist, foot, head_pt, head_poly, limb, sway, torso_poly
+from body import Build, crease, fist, hair_detail, joint, scaled, shoulder_cap, foot, head_pt, head_poly, limb, sway, torso_poly
+import faces
 from rig import Palette, add, mix, norm, sub, vdir
 
 
@@ -22,16 +23,18 @@ def palette(alt=False):
     p.ramp("mochi", [(255, 255, 250), (246, 238, 226), (216, 202, 196), (176, 156, 160)])
     p.named("white", (255, 255, 255))
     p.named("eye", (24, 12, 24))
+    p.named("iris", (110, 30, 40))
+    p.named("brow", (120, 24, 44))
     p.named("mouth", (120, 30, 44))
     p.named("tattoo", (150, 60, 90))
     p.named("stitch", (90, 30, 40))
     return p
 
 
-BUILD = Build(thigh=27, shin=26, ankle=3, foot=8.0, torso=32, neck=3.0,
+BUILD = scaled(1.03, Build(thigh=27, shin=26, ankle=3, foot=8.0, torso=32, neck=3.0,
               head_rx=7.2, head_ry=8.0, upper=17, fore=16, hand=3.4,
               hip_w=13, sh_w=22, stance_w=24, thigh_r=5.2, shin_r=4.0,
-              upper_r=4.2, fore_r=3.8, height=0.92)
+              upper_r=4.2, fore_r=3.8, height=0.92))
 
 FACES = {
     # 'T' teeth, 's' stitches along the huge mouth
@@ -126,6 +129,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
         fr.capsule(e, add(e, (o - 1 + fl * 0.5, 5)), 1.4, 0.8, p["scarf"], 5, group="scarftail")
     # far arm
     limb(fr, sk.shF, sk.elF, 4.2, 3.8, skin, 10, group="armF", bias=-0.2)
+    shoulder_cap(fr, sk.shF, sk.elF, 4.5, skin, 10.05, group="armF", bias=-0.2)
     limb(fr, sk.elF, sk.wrF, 3.8, 3.4, skin, 10.3, group="armF", bias=-0.2)
     limb(fr, mix(sk.elF, sk.wrF, 0.4), sk.wrF, 4.2, 4.0, p["leather"], 10.4, group="gauntF", bias=-0.2)
     c = fist(fr, sk, "F", 3.4, skin, 10.6, group="armF", bias=-0.2, shape=pose.get("handF", "fist"))
@@ -136,6 +140,7 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
             _torso(fr, sk, b, p, tick, wind)
         hip, kn, an = sk["hip" + side], sk["knee" + side], sk["ankle" + side]
         limb(fr, hip, kn, 5.8, 4.8, p["pants"], z + 6, group="pl" + side, bias=bias)
+        crease(fr, hip, kn, an, p["pants"][-1], z + 6.4, n=2)
         limb(fr, kn, mix(kn, an, 0.55), 4.6, 4.2, p["pants"], z + 6, group="pl" + side, bias=bias)
         limb(fr, mix(kn, an, 0.45), an, 4.4, 3.8, p["leather"], z + 6.2, group="boot" + side, bias=bias)
         foot(fr, sk, side, p["leather"], z + 6.3, r=3.0, group="boot" + side, bias=bias)
@@ -145,17 +150,20 @@ def draw(fr, sk, b, p, variant=None, tick=0, wind=0.0):
     fr.ellipse(head_pt(sk, b, 2.6, 3.8), 4.6, 4.2, skin, zh, group="head")
     expr = pose.get("expr", "neutral")
     cm = {"k": p["eye"], "r": p["hair"][2], "T": p["white"], "m": p["mouth"], "s": p["stitch"]}
-    fr.stamp(FACES[expr], head_pt(sk, b, -2.4, -2.6), cm, zh + 2)
+    fr.stamp(faces.build("kata", expr), head_pt(sk, b, -4.0, -3.6), faces.cmap(p, skin, {"s": p["stitch"]}), zh + 2)
     # wild spiky red hair
     sw = sway(tick, 24, 0.6) - wind * 1.4
     hp = head_poly(sk, b, [(-7.4, 4.0), (-12 + sw, 2), (-9 + sw, -1), (-14 + sw, -4), (-9 + sw, -6), (-12 + sw, -11),
                            (-5, -9.4), (-4, -14), (0, -10.2), (3, -13.4), (4.4, -8.6), (8.6, -9.6), (7.2, -4.6), (8.8, -2.4),
                            (5.6, -3.4), (3, -4.8), (0, -3.6), (-3, -2), (-4.6, 1)])
     fr.poly(hp, p["hair"], zh + 3, group="hair", soft=2)
+    hair_detail(fr, hp, sk.head, p["hair"], zh + 3.05, tips=[1, 3, 5, 7, 9, 11])
     # scarf wrap around the neck/shoulders
     fr.ellipse(add(sk.neck, (0, 1)), 7.5, 3.8, p["scarf"], zh - 1, group="scarf")
     # near arm
     limb(fr, sk.shN, sk.elN, 4.4, 4.0, skin, 60, group="armN")
+    shoulder_cap(fr, sk.shN, sk.elN, 4.8, skin, 60.05, group="armN")
+    joint(fr, sk.elN, 4.1, skin, 60.2, group="armN")
     limb(fr, sk.elN, sk.wrN, 4.0, 3.6, skin, 60.3, group="armN")
     limb(fr, mix(sk.elN, sk.wrN, 0.4), sk.wrN, 4.4, 4.2, p["leather"], 60.4, group="gauntN")
     d = norm(sub(sk.wrN, sk.elN))

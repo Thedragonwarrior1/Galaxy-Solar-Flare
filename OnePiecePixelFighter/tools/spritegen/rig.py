@@ -412,6 +412,27 @@ class Frame:
                 idx[line] = 1
             else:
                 idx[line] = dk[idx[line]]
+        # cleanup: fill single-pixel holes and drop isolated specks so the
+        # silhouette has no gaps or disconnected clusters
+        filled = op.copy()
+        nb = np.zeros(op.shape, np.int32)
+        nb[1:, :] += op[:-1, :]
+        nb[:-1, :] += op[1:, :]
+        nb[:, 1:] += op[:, :-1]
+        nb[:, :-1] += op[:, 1:]
+        holes = (~op) & (nb >= 4)
+        if holes.any():
+            ys, xs = np.nonzero(holes)
+            for y, x in zip(ys, xs):
+                for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+                    yy, xx = y + dy, x + dx
+                    if 0 <= yy < self.H and 0 <= xx < self.W and idx[yy, xx] > 0:
+                        idx[y, x] = idx[yy, xx]
+                        break
+            filled |= holes
+        specks = op & (nb == 0)
+        idx[specks] = 0
+        op = filled & ~specks
         if outline:
             dil = op.copy()
             dil[1:, :] |= op[:-1, :]

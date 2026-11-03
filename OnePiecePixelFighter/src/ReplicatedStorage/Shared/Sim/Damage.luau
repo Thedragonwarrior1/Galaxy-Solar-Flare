@@ -198,7 +198,8 @@ function Damage.apply(match: any, src: HitSource, def: any): string
 		def.y = math.max(def.y, 1)
 	else
 		def.crouchingFlag = def:isCrouching()
-		def.hitAnim = if def.crouchingFlag then "HitCrouch" elseif m.rank >= 3 then "HitHeavy" else "HitLight"
+		local bodyHit = (src.y - def.y) < def.height * 0.72
+		def.hitAnim = if def.crouchingFlag then "HitCrouch" elseif m.rank >= 3 then "HitHeavy" elseif bodyHit then "HitGut" else "HitLight"
 		def:setState("hitstun")
 		def.stun = hitstun
 		def.vx = 0

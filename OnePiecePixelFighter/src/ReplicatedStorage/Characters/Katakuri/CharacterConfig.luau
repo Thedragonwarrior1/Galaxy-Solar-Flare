@@ -10,6 +10,7 @@ return {
 	Subtitle = "SWEET COMMANDER",
 	Style = "COUNTER",
 	Description = "Huge reach with mochi arms and Mogura. Future Sight (SPECIAL) counters any strike; DOWN + SPECIAL is a mochi flurry.",
+	Ratings = { Power = 5, Speed = 2, Range = 4 }, -- 1..5, shown on character select
 	Theme = { primary = { 196, 40, 62 }, accent = { 246, 238, 226 }, aura = "mochi" },
 	Stats = {
 		Health = 1100,
