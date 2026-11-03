@@ -17,14 +17,12 @@
   --panel2: rgba(19, 35, 77, 0.9);
   --display: 'Bangers', 'Impact', 'Arial Black', system-ui, sans-serif;
   --body: 'Rubik', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bg: #050a18; /* single, deliberately dark game look */
   color-scheme: dark;
 }
-:root:not([data-theme="light"]) { --bg: #050a18; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #050a18; } }
-:root[data-theme="dark"] { --bg: #050a18; }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg, #050a18); color: var(--text); font-family: var(--body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--body); -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
 #app { position: fixed; inset: 0; }
 #stage { position: absolute; inset: 0; }
 #stage canvas { display: block; width: 100%; height: 100%; }
@@ -153,11 +151,11 @@ button, input, select { font-family: var(--body); }
 
 /* ---------------- HUD ---------------- */
 .hud { pointer-events: none; }
-.hud-top { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
+.hud-top { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
 .hud-timer { font-family: var(--display); font-size: 40px; letter-spacing: 2px; color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 rgba(0,0,0,.4); min-width: 110px; text-align: center; }
 .hud-timer.low { color: var(--red); animation: pulse .5s infinite alternate; }
 .hud-mode { font-weight: 900; font-size: 12px; letter-spacing: 2px; color: #fff; background: rgba(0,0,0,.35); padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
-.hud-bottom { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: clamp(8px, 2vw, 28px); padding: 0 12px; flex-wrap: wrap; }
+.hud-bottom { position: absolute; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; gap: clamp(8px, 2vw, 28px); padding: 0 12px; flex-wrap: wrap; }
 .pc { position: relative; width: clamp(150px, 18vw, 230px); height: 92px; }
 .pc .bg { position: absolute; inset: 14px 0 0 0; border-radius: 12px; background: linear-gradient(110deg, var(--pc) 0%, rgba(8,14,34,.88) 58%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.18), 0 6px 18px rgba(0,0,0,.4); transform: skewX(-8deg); }
 .pc .por { position: absolute; left: 6px; bottom: 6px; width: 70px; height: 70px; border-radius: 50%; object-fit: cover; object-position: 50% 25%; background: rgba(0,0,0,.35); box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(0,0,0,.4); }
@@ -286,9 +284,9 @@ button, input, select { font-family: var(--body); }
 
 /* ---------------- touch controls ---------------- */
 .touch-controls { position: absolute; inset: 0; pointer-events: none; z-index: 20; }
-.tc-stick { position: absolute; left: 4vw; bottom: 6vh; width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.25); pointer-events: auto; touch-action: none; }
+.tc-stick { position: absolute; left: calc(4vw + env(safe-area-inset-left, 0px)); bottom: calc(6vh + env(safe-area-inset-bottom, 0px)); width: 150px; height: 150px; border-radius: 50%; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.25); pointer-events: auto; touch-action: none; }
 .tc-knob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: rgba(255,255,255,.35); box-shadow: 0 0 0 2px rgba(255,255,255,.6); }
-.tc-buttons { position: absolute; right: 3vw; bottom: 4vh; width: 270px; height: 250px; pointer-events: none; }
+.tc-buttons { position: absolute; right: calc(3vw + env(safe-area-inset-right, 0px)); bottom: calc(4vh + env(safe-area-inset-bottom, 0px)); width: 270px; height: 250px; pointer-events: none; }
 .tc-btn { position: absolute; width: 62px; height: 62px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); background: rgba(19,35,77,.55); color: #fff; font-weight: 900; font-size: 12px; pointer-events: auto; touch-action: none; }
 .tc-btn.on { background: var(--gold); color: var(--ink); }
 .tc-attack { right: 70px; bottom: 60px; width: 76px; height: 76px; font-size: 14px; }
@@ -376,3 +374,6 @@ button, input, select { font-family: var(--body); }
 .train.collapsed h4::after { content: ' ▸'; }
 .train.collapsed { width: auto; }
 .hud.touch .train { left: 8px; right: auto; top: 120px; opacity: .92; }
+
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }

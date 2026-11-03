@@ -27,17 +27,17 @@ export default defineCharacter({
   palette: { primary: '#bc6c25', secondary: '#fefae0', accent: '#2a9d8f', ui: '#e9c46a' },
   ratings: { power: 3, speed: 3, range: 5, defense: 2, recovery: 4, difficulty: 3 },
   stats: {
-    weight: 90, runSpeed: 10.3, walkSpeed: 4.8, groundAccel: 60, friction: 56,
+    weight: 98, runSpeed: 10.8, walkSpeed: 4.8, groundAccel: 60, friction: 56,
     airSpeed: 8.5, airAccel: 30, airFriction: 6, gravity: 42, fallSpeed: 14, fastFall: 22,
     jumpVel: 17.5, djumpVel: 16, airJumps: 1, radius: 0.44, height: 1.76, weapons: 'slingshot',
   },
-  throwName: 'Panic Toss', throwDmg: 8,
+  throwName: 'Panic Toss', throwDmg: 10, throwKbg: 74,
   abilities: [{ key: 'Q', move: 'sp1' }, { key: 'E', move: 'sp2' }, { key: 'R', move: 'sp3' }, { key: 'F', move: 'ult' }],
   ai: { range: 2.0, projectile: 'sp1', projRange: [5, 22], poke: 'sp2', pokeRange: [5, 10], kill: 'fwdHeavy', antiAir: 'nair', setup: 'upHeavy', combo: 'jab1', ultRange: 14, keepAway: 3.2 },
   projectiles: {
-    pellet: { r: 0.32, speed: 40, life: 42, grav: 0, dmg: 6.5, ang: 35, bkb: 32, kbg: 80, el: 'pellet', dir: 'proj', ground: 'die' },
+    pellet: { r: 0.32, speed: 40, life: 42, grav: 0, dmg: 6.5, ang: 35, bkb: 36, kbg: 88, el: 'pellet', dir: 'proj', ground: 'die' },
     bomb: { r: 0.42, speed: 14, life: 120, grav: 26, dmg: 4, ang: 50, bkb: 30, kbg: 40, el: 'fire', dir: 'proj', ground: 'die', expireExplode: true,
-      explode: { r: 2.2, dmg: 13.5, ang: 55, bkb: 45, kbg: 75, el: 'fire', dur: 5 } },
+      explode: { r: 2.2, dmg: 14, ang: 55, bkb: 50, kbg: 82, el: 'fire', dur: 5 } },
     minibomb: { r: 0.35, speed: 0, life: 90, grav: 34, dmg: 3, ang: 70, bkb: 30, kbg: 40, el: 'fire', dir: 'proj', ground: 'die', expireExplode: true,
       explode: { r: 1.5, dmg: 8, ang: 70, bkb: 40, kbg: 65, el: 'fire', dur: 4 } },
     trap: { r: 0.5, speed: 0, life: 900, grav: 30, dmg: 0, el: 'trap', ground: 'stick', trap: { arm: 30, trigger: 1.25 },
@@ -86,7 +86,7 @@ export default defineCharacter({
       charge: { at: 8, max: 60, btn: BTN.HEAVY },
       fx: hammer([[0, 20, 0.4, 1.2, 'io', 2.2, 0.3], [8, 5, 0.3, 2.0, 'out', 3.3, 0.1], [15, 0, 0.9, 1.0, 'snap', 0.35, 2.1], [22, 0, 0.85, 0.95, 'lin', 0.3, 2.05], [36, 10, 0.5, 1.2, 'io', 2.0, 0.6]], 54),
       pose: [[0, { lean: 0, mallet: 1 }], [8, { lean: -20, mallet: 1 }], [15, { lean: 35, crouch: 0.3, mallet: 1 }], [36, { lean: 10, mallet: 1 }], [54, { lean: 0, crouch: 0, mallet: 0 }]],
-      hb: [{ f: [13, 17], at: 'tipR', r: 0.95, dmg: 18, ang: 40, bkb: 34, kbg: 96, el: 'punch', hitlag: 1.3 }],
+      hb: [{ f: [13, 17], at: 'tipR', r: 1.0, dmg: 18, ang: 40, bkb: 40, kbg: 101, el: 'punch', hitlag: 1.3 }],
       sfx: [[7, 'whoosh_heavy'], [14, 'monster_thud']],
     },
     nair: {
@@ -100,7 +100,7 @@ export default defineCharacter({
       name: 'Sling Swat', kind: 'air', total: 34, landLag: 11,
       fx: { handL: [[0, -40, 0.4, 1.5], [4, -60, 0.6, 1.9, 'out'], [9, 20, 1.2, 1.0, 'snap'], [13, 30, 1.1, 0.9], [34, null]] },
       pose: [[0, { twist: 0 }], [4, { twist: 25 }], [9, { twist: -25, lean: 15 }], [34, { twist: 0, lean: 0 }]],
-      hb: [{ f: [7, 10], at: 'handL', r: 0.65, dmg: 11, ang: 40, bkb: 32, kbg: 88, el: 'punch' }],
+      hb: [{ f: [7, 10], at: 'handL', r: 0.7, dmg: 12.5, ang: 40, bkb: 34, kbg: 92, el: 'punch' }],
       sfx: [[6, 'whoosh_med']],
     },
     dair: {
@@ -121,7 +121,7 @@ export default defineCharacter({
       sfx: [[4, 'sling_twang'], [10, 'pellet_pop']],
     },
     sp2: {
-      name: 'Boom Pellet', desc: 'E — lobs an explosive pellet in an arc. Blows up on contact.', kind: 'any', total: 34, cooldown: 90, aim: 'far', gravity: 0.5,
+      name: 'Boom Pellet', desc: 'E — lobs an explosive pellet in an arc. Blows up on contact.', kind: 'any', total: 34, cooldown: 72, aim: 'far', gravity: 0.5,
       fx: { handL: AIM.handL.map((k) => (k[1] === null ? k : [k[0], k[1], k[2], k[3] + 0.3, k[4]])), handR: AIM.handR.map((k) => (k[1] === null ? k : [k[0], k[1], k[2], k[3] + 0.3, k[4]])) },
       pose: [[0, { twist: 0 }], [5, { twist: -10, lean: -15, aim: 1 }], [16, { twist: -10, lean: -15, aim: 1 }], [34, { twist: 0, lean: 0, aim: 0 }]],
       events: [{ f: 10, fn: (w, f) => {

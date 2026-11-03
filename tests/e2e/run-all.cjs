@@ -14,6 +14,7 @@ const flows = [
   { name: 'combat + ultimate (Threeblade vs Blaze Kick)', args: ['shot.cjs', url, out, 'flow-combat.cjs', '960', '540'], env: { QUALITY: 'medium', CHARS: 'threeblade,blaze_kick' } },
   { name: 'online: two browsers through the authoritative server', args: ['online-2p.cjs', url, out], expect: 'ONLINE 2P OK' },
   { name: 'phone landscape with touch controls', args: ['mobile.cjs', url, out], expect: 'after touch attack' },
+  { name: 'gamepad: menu navigation + in-match stick/buttons', args: ['gamepad.cjs', url, out], expect: 'GAMEPAD OK' },
 ];
 (async () => {
   const srv = spawn(process.execPath, [path.join(root, 'server/server.js')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });

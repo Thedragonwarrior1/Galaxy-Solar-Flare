@@ -32,7 +32,7 @@ export default defineCharacter({
   palette: { primary: '#26304a', secondary: '#e9ecef', accent: '#3ee0d0', ui: '#3ee0d0' },
   ratings: { power: 3, speed: 3, range: 4, defense: 3, recovery: 5, difficulty: 5 },
   stats: {
-    weight: 98, runSpeed: 10.5, walkSpeed: 4.8, groundAccel: 62, friction: 56,
+    weight: 101, runSpeed: 10.8, walkSpeed: 4.8, groundAccel: 62, friction: 56,
     airSpeed: 8.3, airAccel: 28, airFriction: 6, gravity: 40, fallSpeed: 13.5, fastFall: 21,
     jumpVel: 17, djumpVel: 15.6, airJumps: 1, radius: 0.45, height: 1.88, weapons: 'nodachi',
   },
@@ -76,11 +76,11 @@ export default defineCharacter({
       charge: { at: 6, max: 60, btn: BTN.HEAVY },
       fx: blade([[0, 40, 0.5, 1.3], [6, 110, 0.7, 1.5, 'out'], [10, 60, 0.85, 1.3, 'in'], [13, -70, 0.95, 1.15, 'snap'], [18, -80, 0.9, 1.15], [32, -20, 0.5, 1.2]], 50),
       pose: [[0, { twist: 0 }], [6, { twist: 45, crouch: 0.2 }], [13, { twist: -40, lean: 16, crouch: 0.25 }], [50, { twist: 0, lean: 0, crouch: 0 }]],
-      hb: [{ f: [11, 14], seg: ['handR', 'tipR', 3], r: 0.5, dmg: 15, ang: 38, bkb: 36, kbg: 94, el: 'slash', hitlag: 1.15 }],
+      hb: [{ f: [11, 14], seg: ['handR', 'tipR', 3], r: 0.52, dmg: 16, ang: 38, bkb: 36, kbg: 95, el: 'slash', hitlag: 1.15 }],
       events: [{
         f: 12, fn: (w, f) => {
           const mult = 1 + 0.45 * (f.charge / 60);
-          const z = zoneAt(w, f, 'riftCut', [0, 4.3, 1.1], { r: 1.25, life: 16, visual: 'rift', hit: { dmg: 10, ang: 40, bkb: 50, kbg: 80, el: 'spatial', dir: 'away', from: 7, to: 9 } });
+          const z = zoneAt(w, f, 'riftCut', [0, 4.3, 1.1], { r: 1.25, life: 16, visual: 'rift', hit: { dmg: 11, ang: 40, bkb: 52, kbg: 82, el: 'spatial', dir: 'away', from: 7, to: 9 } });
           z.dmgMult = mult;
         },
       }],

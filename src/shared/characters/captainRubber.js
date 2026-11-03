@@ -30,7 +30,7 @@ export default defineCharacter({
       name: 'Snap Jab', desc: 'A rubbery jab that snaps out and back.', total: 18,
       fx: { handR: [...thrust('handR', { a: 0, h: 1.3, r0: 0.4, r1: 1.65, start: 0, ext: 3, hold: 3, back: 7 }), [18, null]] },
       pose: [[0, { twist: -10 }], [3, { twist: 22, lean: 6 }], [18, { twist: 0 }]],
-      hb: [{ f: [3, 6], at: 'handR', r: 0.5, dmg: 2.5, ang: 25, bkb: 10, kbg: 35, el: 'punch' }],
+      hb: [{ f: [3, 6], at: 'handR', r: 0.5, dmg: 3, ang: 25, bkb: 10, kbg: 35, el: 'punch' }],
       next: { move: 'jab2', btn: 'ATTACK', from: 4, to: 17 },
       sfx: [[2, 'rubber_snap']],
     },
@@ -70,7 +70,7 @@ export default defineCharacter({
       pose: [[0, { crouch: 0.1 }], [6, { crouch: 0.55, lean: 12 }], [12, { crouch: 0, lean: -12, lift: 0.25 }], [20, { lean: -8, lift: 0.1 }], [46, { lean: 0, lift: 0 }]],
       hb: [
         { f: [10, 12], p: [0, 0.6, 1.3], r: 0.75, dmg: 10, ang: 88, bkb: 40, kbg: 85, el: 'punch' },
-        { f: [12, 17], at: 'handR', r: 0.8, dmg: 14, ang: 86, bkb: 38, kbg: 98, el: 'punch' },
+        { f: [12, 17], at: 'handR', r: 0.85, dmg: 15, ang: 86, bkb: 38, kbg: 98, el: 'punch' },
       ],
       sfx: [[10, 'rubber_stretch'], [13, 'whoosh_heavy']],
     },

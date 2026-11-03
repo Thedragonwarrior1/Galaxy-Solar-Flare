@@ -20,7 +20,7 @@ export default defineCharacter({
   palette: { primary: '#7b2cbf', secondary: '#f4f1de', accent: '#ff7b00', ui: '#ff7b00' },
   ratings: { power: 3, speed: 5, range: 2, defense: 2, recovery: 5, difficulty: 3 },
   stats: {
-    weight: 86, runSpeed: 14.2, walkSpeed: 5.8, groundAccel: 92, friction: 62,
+    weight: 84, runSpeed: 14, walkSpeed: 5.8, groundAccel: 92, friction: 62,
     airSpeed: 9.6, airAccel: 38, airFriction: 7, gravity: 50, fallSpeed: 17, fastFall: 26,
     jumpVel: 19, djumpVel: 16.6, airJumps: 2, radius: 0.42, height: 1.82, kicker: true,
   },

@@ -21,7 +21,7 @@ export default defineCharacter({
   abilities: [{ key: 'Q', move: 'sp1' }, { key: 'E', move: 'sp2' }, { key: 'R', move: 'sp3' }, { key: 'F', move: 'ult' }],
   ai: { range: 2.0, projectile: 'sp1', projRange: [5, 16], poke: 'sp2', pokeRange: [4, 8], kill: 'fwdHeavy', antiAir: 'upHeavy', combo: 'jab1', ultRange: 14 },
   projectiles: {
-    fireball: { r: 0.55, speed: 17, life: 75, grav: 0, dmg: 8, ang: 45, bkb: 32, kbg: 60, el: 'fire', dir: 'proj', ground: 'die',
+    fireball: { r: 0.55, speed: 17, life: 75, grav: 0, dmg: 7, ang: 45, bkb: 32, kbg: 60, el: 'fire', dir: 'proj', ground: 'die',
       explode: { r: 1.5, dmg: 3, ang: 60, bkb: 30, kbg: 40, el: 'fire', dur: 4 } },
     sunball: { r: 2.4, speed: 9.5, life: 100, grav: 0, dmg: 8, ang: 55, bkb: 60, kbg: 50, el: 'fire', dir: 'proj', ground: 'die', ult: true, expireExplode: true,
       explode: { r: 6.6, dmg: 26, ang: 58, bkb: 86, kbg: 82, el: 'fire', dur: 8, shield: 3, ult: true } },
@@ -73,7 +73,7 @@ export default defineCharacter({
       fx: { handR: [[0, 40, 0.4, 1.3], [7, 150, 0.7, 1.5], [12, 100, 0.6, 1.4], [15, 0, 1.55, 1.3, 'snap'], [21, 0, 1.5, 1.3], [34, 20, 0.5, 1.2], [50, null]] },
       pose: [[0, { twist: 0 }], [7, { twist: -55, lean: -8, crouch: 0.2 }], [15, { twist: 30, lean: 20, crouch: 0.2 }], [30, { twist: 15, lean: 10 }], [50, { twist: 0, lean: 0, crouch: 0 }]],
       mv: [{ f: [12, 15], fwd: 6 }],
-      hb: [{ f: [13, 17], at: 'handR', ext: 0.25, r: 0.85, dmg: 17, ang: 38, bkb: 36, kbg: 94, el: 'fire', hitlag: 1.2 }],
+      hb: [{ f: [13, 17], at: 'handR', ext: 0.25, r: 0.85, dmg: 16, ang: 38, bkb: 35, kbg: 93, el: 'fire', hitlag: 1.2 }],
       sfx: [[6, 'fire_whoosh'], [14, 'explosion_small']],
     },
     nair: {

@@ -201,7 +201,7 @@ export function settingsScreen(app, params) {
     slider('VFX intensity', 'vfx', 0.25, 1, 0.05),
     seg('Screen shake', 'screenShake', [[true, 'On'], [false, 'Off']]),
     slider('Camera sensitivity', 'cameraSensitivity', 0.3, 2, 0.1, (v) => v.toFixed(1) + '×'),
-    h('div.set', h('span', 'Fullscreen'), h('button.ghost.focusable', { onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch { app.toast('Fullscreen not supported here'); } } }, 'Toggle')),
+    h('div.set', h('span', 'Fullscreen'), h('button.ghost.focusable', { onclick: () => { try { const r = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); if (r && r.catch) r.catch(() => app.toast('Fullscreen is not available here')); } catch { app.toast('Fullscreen is not available here'); } } }, 'Toggle')),
     seg('Touch controls', 'touch', [['auto', 'Auto'], ['on', 'On'], ['off', 'Off']]),
   );
   const binds = h('div');

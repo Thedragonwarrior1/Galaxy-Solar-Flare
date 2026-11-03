@@ -112,8 +112,8 @@ export default defineCharacter({
       pose: [[0, { lean: 0 }], [7, { lean: -12, crouch: 0.2 }], [15, { lean: 28, crouch: 0.35 }], [28, { lean: 18, crouch: 0.25 }], [54, { lean: 0, crouch: 0 }]],
       mv: [{ f: [12, 15], fwd: 7 }],
       hb: [
-        { f: [13, 16], seg: ['handR', 'tipR', 3], r: 0.55, dmg: 19, ang: 36, bkb: 36, kbg: 95, el: 'slash', hitlag: 1.25 },
-        { f: [13, 16], seg: ['handL', 'tipL', 3], r: 0.55, dmg: 19, ang: 36, bkb: 36, kbg: 95, el: 'slash', hitlag: 1.25 },
+        { f: [13, 16], seg: ['handR', 'tipR', 3], r: 0.55, dmg: 18, ang: 36, bkb: 35, kbg: 94, el: 'slash', hitlag: 1.25 },
+        { f: [13, 16], seg: ['handL', 'tipL', 3], r: 0.55, dmg: 18, ang: 36, bkb: 35, kbg: 94, el: 'slash', hitlag: 1.25 },
       ],
       sfx: [[6, 'sword_ring'], [13, 'slash_heavy']],
     },
