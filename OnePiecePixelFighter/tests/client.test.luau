@@ -385,9 +385,9 @@ T.test("PC keys: 1/2/3/4 attacks, F awakening, left click light", function()
 		T.eq(bit32.band(IC.held(1), bit), bit, tostring(key) .. " held")
 		Mock.release(key)
 	end
-	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Unknown }, false)
+	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Space }, false)
 	T.eq(bit32.band(IC.takePresses(1), Input.LIGHT), Input.LIGHT, "left click")
-	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Unknown }, true)
+	Mock.UserInputService.InputBegan:Fire({ UserInputType = roblox.Enum.UserInputType.MouseButton1, KeyCode = K.Space }, true)
 	T.eq(IC.takePresses(1), 0, "clicks on GUI buttons are not attacks")
 end)
 
