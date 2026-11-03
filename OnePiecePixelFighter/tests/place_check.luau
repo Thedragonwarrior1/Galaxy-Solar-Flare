@@ -14,9 +14,15 @@ local function walk(inst, path)
 	end
 end
 walk(game, "game")
-table.sort(biggest, function(a, b) return a[2] > b[2] end)
-for k, v in counts do print(k, v) end
-for i = 1, 5 do print(string.format("%7.1f KB  %s", biggest[i][2] / 1024, biggest[i][1])) end
+table.sort(biggest, function(a, b)
+	return a[2] > b[2]
+end)
+for k, v in counts do
+	print(k, v)
+end
+for i = 1, 5 do
+	print(string.format("%7.1f KB  %s", biggest[i][2] / 1024, biggest[i][1]))
+end
 local rs = game:GetService("ReplicatedStorage")
 assert(rs:FindFirstChild("Shared"):FindFirstChild("Sim"):FindFirstChild("Match"), "Match missing")
 for _, id in { "LuffyGear2", "LuffyGear4", "LuffyGear5", "Doflamingo", "Enel", "Zoro", "Katakuri" } do

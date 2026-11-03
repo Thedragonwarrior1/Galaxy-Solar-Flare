@@ -372,7 +372,8 @@ function App.start()
 	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	gui.DisplayOrder = 10
 	gui.Parent = player:WaitForChild("PlayerGui")
-	local bg = Widgets.frame(gui, { Name = "Letterbox", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 6, 14), ZIndex = 0 })
+	local bg =
+		Widgets.frame(gui, { Name = "Letterbox", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(8, 6, 14), ZIndex = 0 })
 	bg.ZIndex = 0
 
 	CameraController.start()
@@ -382,8 +383,12 @@ function App.start()
 	local err
 	canvas, err = Canvas.new(gui, CombatConfig.ScreenWidth, CombatConfig.ScreenHeight, "Screen")
 	if not canvas then
-		showFatal("EditableImage could not be created (" .. tostring(err) .. ").\n\nIn Roblox Studio open Game Settings > Security and enable "
-			.. "\"Allow Mesh / Image APIs\", then publish again. Studio play-tests support it by default.")
+		showFatal(
+			"EditableImage could not be created ("
+				.. tostring(err)
+				.. ").\n\nIn Roblox Studio open Game Settings > Security and enable "
+				.. '"Allow Mesh / Image APIs", then publish again. Studio play-tests support it by default.'
+		)
 		return
 	end
 	mobile = MobileControls.new(gui)

@@ -62,12 +62,31 @@ function Effects.hit(self: any, x: number, y: number, class: string, vfx: string
 	elseif vfx == "mochi" or vfx == "powermochi" or vfx == "mochispike" then
 		cols = Effects.Colors.mochi
 		for _ = 1, 5 do
-			self:add({ kind = "puff", x = x + rnd(-6, 6), y = y + rnd(-6, 6), vx = rnd(-1.5, 1.5), vy = rnd(-1, 1.5), r = rnd(3, 6), life = 18, c1 = cols[1], c2 = cols[2] })
+			self:add({
+				kind = "puff",
+				x = x + rnd(-6, 6),
+				y = y + rnd(-6, 6),
+				vx = rnd(-1.5, 1.5),
+				vy = rnd(-1, 1.5),
+				r = rnd(3, 6),
+				life = 18,
+				c1 = cols[1],
+				c2 = cols[2],
+			})
 		end
 	elseif vfx == "thread" or vfx == "parasite" or vfx == "birdcage" then
 		cols = Effects.Colors.thread
 	end
-	self:add({ kind = "spark", x = x, y = y, life = 9 + big * 4, size = 10 + big * 8 + (if class == "SU" then 8 else 0), c1 = cols[1], c2 = cols[2], rays = 6 + big * 2 })
+	self:add({
+		kind = "spark",
+		x = x,
+		y = y,
+		life = 9 + big * 4,
+		size = 10 + big * 8 + (if class == "SU" then 8 else 0),
+		c1 = cols[1],
+		c2 = cols[2],
+		rays = 6 + big * 2,
+	})
 	if big > 0 then
 		self:add({ kind = "ring", x = x, y = y, life = 12, size = 6, grow = 2.2, c1 = cols[2] })
 	end
@@ -85,14 +104,34 @@ end
 function Effects.dust(self: any, x: number, n: number?, big: boolean?)
 	local cols = Effects.Colors.dust
 	for i = 1, (n or 4) do
-		self:add({ kind = "puff", x = x + rnd(-10, 10), y = 2, vx = rnd(-1.4, 1.4), vy = rnd(0.2, 0.9), r = rnd(2, if big then 6 else 4), life = 18, c1 = cols[1], c2 = cols[2] })
+		self:add({
+			kind = "puff",
+			x = x + rnd(-10, 10),
+			y = 2,
+			vx = rnd(-1.4, 1.4),
+			vy = rnd(0.2, 0.9),
+			r = rnd(2, if big then 6 else 4),
+			life = 18,
+			c1 = cols[1],
+			c2 = cols[2],
+		})
 	end
 end
 
 function Effects.smoke(self: any, x: number, y: number, n: number, kind: string?)
 	local cols = Effects.Colors[kind or "smoke"] or Effects.Colors.smoke
 	for _ = 1, n do
-		self:add({ kind = "puff", x = x + rnd(-8, 8), y = y + rnd(-6, 6), vx = rnd(-0.6, 0.6), vy = rnd(0.3, 1.2), r = rnd(3, 6), life = 24, c1 = cols[1], c2 = cols[2] })
+		self:add({
+			kind = "puff",
+			x = x + rnd(-8, 8),
+			y = y + rnd(-6, 6),
+			vx = rnd(-0.6, 0.6),
+			vy = rnd(0.3, 1.2),
+			r = rnd(3, 6),
+			life = 24,
+			c1 = cols[1],
+			c2 = cols[2],
+		})
 	end
 end
 

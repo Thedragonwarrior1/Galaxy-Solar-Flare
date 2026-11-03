@@ -40,7 +40,9 @@ end)
 
 T.test("every animation name used by the sim is in the protocol table", function()
 	local known = {}
-	for _, a in Protocol.Anims do known[a] = true end
+	for _, a in Protocol.Anims do
+		known[a] = true
+	end
 	for _, id in CD.Order do
 		for name in CD.get(id).frameData do
 			T.ok(known[name], "animation " .. name .. " missing from Protocol.Anims")

@@ -142,17 +142,44 @@ function Renderer.fighterExtras(self: any, i: number, f: any, cs: any, frame: an
 	if aura == "steam" and t % 9 == 0 and not f.ko then
 		local x, y = anchorWorld(f, anc.chest)
 		if x then
-			fx:add({ kind = "puff", x = x + math.random(-8, 8), y = y + math.random(-6, 10), vx = math.random(-5, 5) / 20, vy = 0.7, r = 2.5, life = 22,
-				c1 = Effects.Colors.steam[1], c2 = Effects.Colors.steam[2] })
+			fx:add({
+				kind = "puff",
+				x = x + math.random(-8, 8),
+				y = y + math.random(-6, 10),
+				vx = math.random(-5, 5) / 20,
+				vy = 0.7,
+				r = 2.5,
+				life = 22,
+				c1 = Effects.Colors.steam[1],
+				c2 = Effects.Colors.steam[2],
+			})
 		end
 	elseif aura == "smoke" and t % 5 == 0 and not f.ko then
-		fx:add({ kind = "puff", x = f.x + math.random(-22, 22), y = f.y + math.random(40, 72), vx = 0, vy = 0.4, r = 3, life = 20,
-			c1 = Effects.Colors.smoke[1], c2 = Effects.Colors.smoke[2] })
+		fx:add({
+			kind = "puff",
+			x = f.x + math.random(-22, 22),
+			y = f.y + math.random(40, 72),
+			vx = 0,
+			vy = 0.4,
+			r = 3,
+			life = 20,
+			c1 = Effects.Colors.smoke[1],
+			c2 = Effects.Colors.smoke[2],
+		})
 	elseif aura == "cloud" and t % 7 == 0 and not f.ko then
 		local x, y = anchorWorld(f, anc.head)
 		if x then
-			fx:add({ kind = "puff", x = x + math.random(-14, 14), y = y + math.random(-6, 12), vx = math.random(-5, 5) / 15, vy = 0.3, r = 2, life = 26,
-				c1 = rgb(255, 255, 255), c2 = rgb(220, 226, 250) })
+			fx:add({
+				kind = "puff",
+				x = x + math.random(-14, 14),
+				y = y + math.random(-6, 12),
+				vx = math.random(-5, 5) / 15,
+				vy = 0.3,
+				r = 2,
+				life = 26,
+				c1 = rgb(255, 255, 255),
+				c2 = rgb(220, 226, 250),
+			})
 		end
 	elseif aura == "sparks" and t % 11 == 0 and not f.ko then
 		local x, y = anchorWorld(f, anc.chest)
@@ -204,8 +231,16 @@ function Renderer.fighterExtras(self: any, i: number, f: any, cs: any, frame: an
 			for k = -1, 1 do
 				local ox, oy = (hx or f.x), (hy or f.y + 60)
 				if vfx == "risethread" then
-					fx:add({ kind = "bolt", x = f.x + (b[1] + b[3] * 0.5 + k * 6) * f.facing, y = f.y, x2 = f.x + (b[1] + b[3] * 0.5 + k * 9) * f.facing,
-						y2 = f.y + b[2] + b[4], life = 2, c1 = white, c2 = pink })
+					fx:add({
+						kind = "bolt",
+						x = f.x + (b[1] + b[3] * 0.5 + k * 6) * f.facing,
+						y = f.y,
+						x2 = f.x + (b[1] + b[3] * 0.5 + k * 9) * f.facing,
+						y2 = f.y + b[2] + b[4],
+						life = 2,
+						c1 = white,
+						c2 = pink,
+					})
 				else
 					fx:add({ kind = "bolt", x = ox, y = oy, x2 = far, y2 = mid + k * 4, life = 2, c1 = white, c2 = pink })
 				end
@@ -227,7 +262,16 @@ function Renderer.fighterExtras(self: any, i: number, f: any, cs: any, frame: an
 				local oy = (y :: number) + math.random(-16, 16)
 				fx:add({ kind = "puff", x = ox, y = oy, life = 3, r = 3, c1 = Effects.Colors.steam[1], c2 = Effects.Colors.steam[2] })
 			end
-			fx:add({ kind = "bolt", x = x - f.facing * 26, y = y, x2 = x, y2 = y, life = 2, c1 = rgb(255, 255, 255), c2 = rgb(255, 200, 200) })
+			fx:add({
+				kind = "bolt",
+				x = x - f.facing * 26,
+				y = y,
+				x2 = x,
+				y2 = y,
+				life = 2,
+				c1 = rgb(255, 255, 255),
+				c2 = rgb(255, 200, 200),
+			})
 		end
 		if self.frameCount % 3 == 0 then
 			fx:afterimage(frame, f.x - f.facing * 6, f.y, f.facing, rgb(255, 150, 160), 6)
@@ -358,7 +402,15 @@ function Renderer.draw(self: any, view: any)
 		local cx, cy = W / 2, H / 2 - 10
 		for k = 0, 23 do
 			local a = k / 24 * math.pi * 2 + self.frameCount * 0.02
-			Raster.line(s, cx + math.cos(a) * 60, cy + math.sin(a) * 60, cx + math.cos(a) * 260, cy + math.sin(a) * 260, rgb(70, 70, 110), 1)
+			Raster.line(
+				s,
+				cx + math.cos(a) * 60,
+				cy + math.sin(a) * 60,
+				cx + math.cos(a) * 260,
+				cy + math.sin(a) * 260,
+				rgb(70, 70, 110),
+				1
+			)
 		end
 	end
 

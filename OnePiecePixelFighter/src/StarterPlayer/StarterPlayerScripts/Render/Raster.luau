@@ -213,7 +213,16 @@ end
 -- Draw a palette-indexed frame with its origin (the fighter's feet) at (x, y).
 -- facing = -1 mirrors horizontally. `solid` replaces every colour except the
 -- outline (index 1) for hit flashes / silhouettes.
-function Raster.sprite(s: Surface, f: Frame, x: number, y: number, facing: number, pal: { [number]: number }, solid: number?, outlineColor: number?)
+function Raster.sprite(
+	s: Surface,
+	f: Frame,
+	x: number,
+	y: number,
+	facing: number,
+	pal: { [number]: number },
+	solid: number?,
+	outlineColor: number?
+)
 	x, y = math.floor(x), math.floor(y)
 	local buf, W, H = s.buf, s.w, s.h
 	local idx, w, runs, rowOff = f.idx, f.w, f.runs, f.rowOff

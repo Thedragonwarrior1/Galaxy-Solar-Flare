@@ -9,9 +9,28 @@ local Timeline = H.require("ReplicatedStorage.Shared.Sim.Timeline")
 local Config = H.require("ReplicatedStorage.Shared.CombatConfig")
 
 local REQUIRED_ANIMS = {
-	"Idle", "Walk", "WalkBack", "Crouch", "JumpSquat", "JumpRise", "JumpApex", "JumpFall", "Land",
-	"DashForward", "DashBack", "Block", "CrouchBlock", "HitLight", "HitHeavy", "HitCrouch",
-	"Launched", "Knockdown", "GetUp", "Defeat", "Victory", "Intro",
+	"Idle",
+	"Walk",
+	"WalkBack",
+	"Crouch",
+	"JumpSquat",
+	"JumpRise",
+	"JumpApex",
+	"JumpFall",
+	"Land",
+	"DashForward",
+	"DashBack",
+	"Block",
+	"CrouchBlock",
+	"HitLight",
+	"HitHeavy",
+	"HitCrouch",
+	"Launched",
+	"Knockdown",
+	"GetUp",
+	"Defeat",
+	"Victory",
+	"Intro",
 }
 local NORMALS = { "StandLight", "StandMedium", "StandHeavy", "CrouchLight", "CrouchMedium", "CrouchHeavy" }
 
@@ -50,10 +69,18 @@ end
 
 local function buttonFor(name)
 	local b = 0
-	if string.find(name, "Light") then b = Input.LIGHT end
-	if string.find(name, "Medium") then b = Input.MEDIUM end
-	if string.find(name, "Heavy") then b = Input.HEAVY end
-	if string.find(name, "Crouch") then b += Input.DOWN end
+	if string.find(name, "Light") then
+		b = Input.LIGHT
+	end
+	if string.find(name, "Medium") then
+		b = Input.MEDIUM
+	end
+	if string.find(name, "Heavy") then
+		b = Input.HEAVY
+	end
+	if string.find(name, "Crouch") then
+		b += Input.DOWN
+	end
 	return b
 end
 
@@ -69,15 +96,21 @@ T.test("all seven fighters load with full animation sets", function()
 			T.ok(anim, id .. "." .. mid .. " animation")
 			local phases = {}
 			for _, r in anim.frames do
-				if r.p then phases[r.p] = true end
+				if r.p then
+					phases[r.p] = true
+				end
 			end
 			T.ok(phases.s and phases.a and phases.r, id .. "." .. mid .. " needs startup/active/recovery rows")
 			local strikes = m.damage > 0 and not m.projectile and not m.counter
 			if strikes then
 				local hasHit = m.hitbox ~= nil
 				for _, r in anim.frames do
-					if r.p == "a" and r.hit and #r.hit > 0 then hasHit = true end
-					if r.p ~= "a" then T.ok(r.hit == nil, id .. "." .. mid .. " has a hitbox outside its active rows") end
+					if r.p == "a" and r.hit and #r.hit > 0 then
+						hasHit = true
+					end
+					if r.p ~= "a" then
+						T.ok(r.hit == nil, id .. "." .. mid .. " has a hitbox outside its active rows")
+					end
 				end
 				T.ok(hasHit, id .. "." .. mid .. " deals damage but has no hitbox")
 			end
@@ -93,7 +126,9 @@ T.test("every character's sprite assets are their own", function()
 	end
 	for _, a in CD.Order do
 		for _, b in CD.Order do
-			if a ~= b then T.ok(seen[a] ~= seen[b], a .. " and " .. b .. " share frame data") end
+			if a ~= b then
+				T.ok(seen[a] ~= seen[b], a .. " and " .. b .. " share frame data")
+			end
 		end
 	end
 end)
@@ -150,17 +185,30 @@ T.test("normals hit on their first active frame and never outside the window", f
 				m:step(buttonFor(name), 0)
 				local seenFrame = nil
 				local hp0 = m.fighters[2].hp
-				if hp0 > m.fighters[2].hp then seenFrame = f1.curFrame end
+				if hp0 > m.fighters[2].hp then
+					seenFrame = f1.curFrame
+				end
 				for _ = 1, 60 do
-					if seenFrame then break end
+					if seenFrame then
+						break
+					end
 					local before = m.fighters[2].hp
 					m:step(0, 0)
 					if m.fighters[2].hp < before then
 						seenFrame = f1.curFrame
 					end
 				end
-				T.ok(seenFrame and seenFrame >= mv.startup and seenFrame < mv.startup + mv.active,
-					string.format("%s.%s hit on move frame %s (active %d-%d)", id, name, tostring(seenFrame), mv.startup, mv.startup + mv.active - 1))
+				T.ok(
+					seenFrame and seenFrame >= mv.startup and seenFrame < mv.startup + mv.active,
+					string.format(
+						"%s.%s hit on move frame %s (active %d-%d)",
+						id,
+						name,
+						tostring(seenFrame),
+						mv.startup,
+						mv.startup + mv.active - 1
+					)
+				)
 			end
 		end
 	end
@@ -175,7 +223,9 @@ T.test("a single-hit move damages only once (no double hits)", function()
 		for _ = 1, 40 do
 			m:step(0, 0)
 			for _, e in m.events do
-				if e.type == "hit" and e.slot == 2 then hits += 1 end
+				if e.type == "hit" and e.slot == 2 then
+					hits += 1
+				end
 			end
 		end
 		T.ok(hits <= 1, id .. " light hit " .. hits .. " times")
@@ -190,7 +240,9 @@ T.test("multi-hit moves hit at most their hit count", function()
 	for _ = 1, 80 do
 		m:step(0, 0)
 		for _, e in m.events do
-			if e.type == "hit" then hits += 1 end
+			if e.type == "hit" then
+				hits += 1
+			end
 		end
 	end
 	T.ok(hits >= 3 and hits <= 6, "Gatling hits " .. hits)
@@ -206,7 +258,11 @@ T.test("blocking: mids blocked standing, lows must be crouch-blocked, overheads 
 	for _ = 1, 30 do
 		m:step(0, Input.BLOCK)
 		for _, e in m.events do
-			if e.type == "block" then blocked += 1 elseif e.type == "hit" then hit += 1 end
+			if e.type == "block" then
+				blocked += 1
+			elseif e.type == "hit" then
+				hit += 1
+			end
 		end
 	end
 	T.eq(hit, 0, "mid should be blocked")
@@ -221,7 +277,9 @@ T.test("blocking: mids blocked standing, lows must be crouch-blocked, overheads 
 	for _ = 1, 30 do
 		m:step(Input.DOWN, Input.BLOCK)
 		for _, e in m.events do
-			if e.type == "hit" then hit += 1 end
+			if e.type == "hit" then
+				hit += 1
+			end
 		end
 	end
 	T.eq(hit, 1, "low must beat a standing block")
@@ -234,7 +292,11 @@ T.test("blocking: mids blocked standing, lows must be crouch-blocked, overheads 
 	for _ = 1, 30 do
 		m:step(Input.DOWN, Input.BLOCK + Input.DOWN)
 		for _, e in m.events do
-			if e.type == "hit" then hit += 1 elseif e.type == "block" then blocked += 1 end
+			if e.type == "hit" then
+				hit += 1
+			elseif e.type == "block" then
+				blocked += 1
+			end
 		end
 	end
 	T.eq(hit, 0, "crouch block stops lows")
@@ -248,7 +310,9 @@ T.test("blocking: mids blocked standing, lows must be crouch-blocked, overheads 
 	for _ = 1, 50 do
 		m:step(0, Input.BLOCK + Input.DOWN)
 		for _, e in m.events do
-			if e.type == "hit" then hit += 1 end
+			if e.type == "hit" then
+				hit += 1
+			end
 		end
 	end
 	T.eq(hit, 1, "overhead must beat a crouching block")
@@ -310,7 +374,9 @@ T.test("damage scales down in long combos", function()
 	for _ = 1, 80 do
 		m:step(0, 0)
 		for _, e in m.events do
-			if e.type == "hit" then table.insert(dmgs, e.damage) end
+			if e.type == "hit" then
+				table.insert(dmgs, e.damage)
+			end
 		end
 	end
 	T.ok(#dmgs >= 4)
@@ -343,7 +409,9 @@ T.test("best of three: two round wins take the match", function()
 		T.eq(m.phase, "ko", "round " .. round .. " should end by KO")
 		while m.phase == "ko" or m.phase == "roundEnd" do
 			m:step(0, 0)
-			if m.phase == "matchEnd" then break end
+			if m.phase == "matchEnd" then
+				break
+			end
 		end
 	end
 	T.eq(m.wins[1], 2)
@@ -353,7 +421,9 @@ end)
 
 T.test("time over gives the round to the healthier fighter", function()
 	local m = Match.new({ p1 = CD.get("Zoro"), p2 = CD.get("Enel"), roundTime = 2 })
-	while m.phase ~= "fight" do m:step(0, 0) end
+	while m.phase ~= "fight" do
+		m:step(0, 0)
+	end
 	m.fighters[1].hp -= 100
 	local guard = 0
 	while m.phase == "fight" and guard < 400 do
@@ -361,7 +431,9 @@ T.test("time over gives the round to the healthier fighter", function()
 		guard += 1
 	end
 	T.eq(m.phase, "ko")
-	while m.phase == "ko" do m:step(0, 0) end
+	while m.phase == "ko" do
+		m:step(0, 0)
+	end
 	T.eq(m.roundWinner, 2)
 	T.eq(m.wins[2], 1)
 end)
@@ -374,7 +446,9 @@ T.test("projectiles: Enel's Vari bolt hits at long range", function()
 	for _ = 1, 100 do
 		m:step(0, 0)
 		for _, e in m.events do
-			if e.type == "hit" and e.projectile then hit = true end
+			if e.type == "hit" and e.projectile then
+				hit = true
+			end
 		end
 	end
 	T.ok(hit, "Vari never hit")
@@ -388,7 +462,9 @@ T.test("projectile clash cancels both", function()
 	for _ = 1, 100 do
 		m:step(0, 0)
 		for _, e in m.events do
-			if e.type == "clash" then clash = true end
+			if e.type == "clash" then
+				clash = true
+			end
 		end
 	end
 	T.ok(clash)
@@ -405,8 +481,12 @@ T.test("Katakuri's Future Sight counters a strike", function()
 	for _ = 1, 60 do
 		m:step(0, 0)
 		for _, e in m.events do
-			if e.type == "counter" then countered = true end
-			if e.type == "hit" and e.slot == 1 then zoroHit = true end
+			if e.type == "counter" then
+				countered = true
+			end
+			if e.type == "hit" and e.slot == 1 then
+				zoroHit = true
+			end
 		end
 	end
 	T.ok(countered, "no counter")
@@ -421,7 +501,9 @@ T.test("Doflamingo's Parasite binds the opponent", function()
 	local bound = false
 	for _ = 1, 80 do
 		m:step(0, 0)
-		if m.fighters[2].state == "bound" then bound = true end
+		if m.fighters[2].state == "bound" then
+			bound = true
+		end
 	end
 	T.ok(bound)
 end)
@@ -431,7 +513,9 @@ T.test("Enel's Mantra Step teleports forward", function()
 	place(m, 250)
 	local x0 = m.fighters[1].x
 	m:step(Input.SPECIAL + Input.DOWN, 0)
-	for _ = 1, 30 do m:step(0, 0) end
+	for _ = 1, 30 do
+		m:step(0, 0)
+	end
 	T.ok(m.fighters[1].x - x0 >= 100, "moved " .. (m.fighters[1].x - x0))
 end)
 
@@ -444,7 +528,9 @@ T.test("Gear 4's charged Kong Gun deals more damage when held", function()
 		for i = 1, 120 do
 			m:step(if i <= holdFrames then Input.SPECIAL else 0, 0)
 			for _, e in m.events do
-				if e.type == "hit" then dmg += e.damage end
+				if e.type == "hit" then
+					dmg += e.damage
+				end
 			end
 		end
 		return dmg
@@ -463,7 +549,11 @@ T.test("Gear 5's EX Toon Bounce spends meter for extra damage", function()
 		local dmg = 0
 		for _ = 1, 80 do
 			m:step(0, 0)
-			for _, e in m.events do if e.type == "hit" then dmg += e.damage end end
+			for _, e in m.events do
+				if e.type == "hit" then
+					dmg += e.damage
+				end
+			end
 		end
 		return dmg, m.fighters[1].meter
 	end
@@ -489,7 +579,11 @@ T.test("super needs a full meter, spends it and freezes the screen", function()
 	local dmg = 0
 	for _ = 1, 150 do
 		m:step(0, 0)
-		for _, e in m.events do if e.type == "hit" then dmg += e.damage end end
+		for _, e in m.events do
+			if e.type == "hit" then
+				dmg += e.damage
+			end
+		end
 	end
 	T.ok(dmg >= 200, "Zoro super damage " .. dmg)
 end)
@@ -503,7 +597,11 @@ T.test("every super connects at close range", function()
 		local dmg = 0
 		for _ = 1, 200 do
 			m:step(0, 0)
-			for _, e in m.events do if e.type == "hit" and e.slot == 2 then dmg += e.damage end end
+			for _, e in m.events do
+				if e.type == "hit" and e.slot == 2 then
+					dmg += e.damage
+				end
+			end
 		end
 		T.ok(dmg >= 150, id .. " super dealt " .. dmg)
 	end
@@ -522,8 +620,12 @@ T.test("fighters face each other after a cross-up jump", function()
 	local m = training("LuffyGear2", "Zoro")
 	place(m, 50)
 	m:step(Input.UP + Input.RIGHT, 0)
-	for _ = 1, 60 do m:step(Input.RIGHT, 0) end
-	for _ = 1, 20 do m:step(0, 0) end
+	for _ = 1, 60 do
+		m:step(Input.RIGHT, 0)
+	end
+	for _ = 1, 20 do
+		m:step(0, 0)
+	end
 	local f1, f2 = m.fighters[1], m.fighters[2]
 	T.ok(f1.x > f2.x, "jumped over")
 	T.eq(f1.facing, -1)
@@ -540,9 +642,13 @@ T.test("double-tap dash and Gear 5 double jump", function()
 	m = training("LuffyGear5", "Zoro")
 	place(m, 200)
 	m:step(Input.UP, 0)
-	for _ = 1, 12 do m:step(0, 0) end
+	for _ = 1, 12 do
+		m:step(0, 0)
+	end
 	local y0 = m.fighters[1].y
-	for _ = 1, 10 do m:step(0, 0) end
+	for _ = 1, 10 do
+		m:step(0, 0)
+	end
 	m:step(Input.UP, 0)
 	T.ok(m.fighters[1].airJumps == 1, "double jump")
 end)
@@ -550,7 +656,9 @@ end)
 T.test("fighters stay inside the stage and on screen", function()
 	local m = training("LuffyGear2", "Zoro")
 	place(m, 100)
-	for _ = 1, 600 do m:step(Input.LEFT, Input.RIGHT) end
+	for _ = 1, 600 do
+		m:step(Input.LEFT, Input.RIGHT)
+	end
 	local f1, f2 = m.fighters[1], m.fighters[2]
 	T.ok(f1.x >= Config.WallMargin and f2.x <= Config.StageWidth - Config.WallMargin)
 	T.ok(math.abs(f2.x - f1.x) <= Config.MaxSeparation + 0.01)
@@ -558,7 +666,13 @@ end)
 
 T.test("sanitized input rejects impossible combinations", function()
 	T.eq(Input.sanitize(Input.LEFT + Input.RIGHT + Input.LIGHT), Input.LIGHT)
-	T.eq(Input.sanitize(99999999), bit32.band(99999999, Input.ALL) - 3 * 0 - (if bit32.band(99999999, 3) == 3 then 3 else 0) - (if bit32.band(99999999, 12) == 12 then 12 else 0))
+	T.eq(
+		Input.sanitize(99999999),
+		bit32.band(99999999, Input.ALL)
+			- 3 * 0
+			- (if bit32.band(99999999, 3) == 3 then 3 else 0)
+			- (if bit32.band(99999999, 12) == 12 then 12 else 0)
+	)
 	T.eq(Input.sanitize(-5) >= 0, true)
 end)
 

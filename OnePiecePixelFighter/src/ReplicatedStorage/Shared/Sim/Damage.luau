@@ -71,8 +71,15 @@ function Damage.apply(match: any, src: HitSource, def: any): string
 
 	-- Katakuri's Future Sight: strikes landing during the counter window are read and answered
 	local dm = def.move
-	if def.state == "attack" and dm and dm.counter and not src.projectile and m.class ~= "SU"
-		and def.curFrame >= dm.counter.from and def.curFrame <= dm.counter.to then
+	if
+		def.state == "attack"
+		and dm
+		and dm.counter
+		and not src.projectile
+		and m.class ~= "SU"
+		and def.curFrame >= dm.counter.from
+		and def.curFrame <= dm.counter.to
+	then
 		att.hitstop = 16
 		def.hitstop = 6
 		def:startMove(dm.counter.follow, match, true)

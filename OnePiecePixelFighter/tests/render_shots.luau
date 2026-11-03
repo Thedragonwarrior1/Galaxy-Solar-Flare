@@ -32,7 +32,9 @@ local t0 = os.clock()
 local view
 local drawn = 0
 for i = 1, 1000 do
-	if i == 300 then m.fighters[1].meter = 100 end
+	if i == 300 then
+		m.fighters[1].meter = 100
+	end
 	m:step(a:think(m), b:think(m))
 	view = Protocol.view(m, view)
 	r:draw(view)

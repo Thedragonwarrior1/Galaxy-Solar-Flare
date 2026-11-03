@@ -16,10 +16,14 @@ export type Actions = {
 
 function MainMenu.new(gui: ScreenGui, actions: Actions)
 	local root = Widgets.frame(gui, { Name = "MainMenu", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 30 })
-	local shade = Widgets.frame(root, { BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, Size = UDim2.fromScale(1, 1), ZIndex = 30 })
+	local shade = Widgets.frame(
+		root,
+		{ BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.45, Size = UDim2.fromScale(1, 1), ZIndex = 30 }
+	)
 	local g = Instance.new("UIGradient")
 	g.Rotation = 90
-	g.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(0.5, 0.9), NumberSequenceKeypoint.new(1, 0.1) })
+	g.Transparency =
+		NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(0.5, 0.9), NumberSequenceKeypoint.new(1, 0.1) })
 	g.Parent = shade
 	Widgets.text(root, "ONE PIECE", {
 		Size = UDim2.fromScale(0.7, 0.16),

@@ -30,24 +30,39 @@ function ResultsScreen.new(parent: Instance, view: any, labels: { string }, stat
 		TextColor3 = C.gold,
 		ZIndex = 41,
 	})
-	Widgets.text(root, subtitle, { Size = UDim2.fromScale(0.6, 0.06), Position = UDim2.fromScale(0.5, 0.35), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 41 })
+	Widgets.text(
+		root,
+		subtitle,
+		{ Size = UDim2.fromScale(0.6, 0.06), Position = UDim2.fromScale(0.5, 0.35), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 41 }
+	)
 	Widgets.text(root, string.format("ROUNDS %d - %d     BEST COMBO %d / %d", view.wins[1], view.wins[2], stats.best[1], stats.best[2]), {
 		Size = UDim2.fromScale(0.6, 0.05),
 		Position = UDim2.fromScale(0.5, 0.42),
 		AnchorPoint = Vector2.new(0.5, 0),
 		ZIndex = 41,
 	})
-	local row = Widgets.frame(root, { BackgroundTransparency = 1, Size = UDim2.fromScale(0.7, 0.09), Position = UDim2.fromScale(0.5, 0.78), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 41 })
+	local row = Widgets.frame(root, {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(0.7, 0.09),
+		Position = UDim2.fromScale(0.5, 0.78),
+		AnchorPoint = Vector2.new(0.5, 0),
+		ZIndex = 41,
+	})
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
 	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	layout.Padding = UDim.new(0.03, 0)
 	layout.Parent = row
 	local self = setmetatable({ root = root }, ResultsScreen)
-	self.rematch = Widgets.button(row, "REMATCH", { Size = UDim2.fromScale(0.3, 1), BackgroundColor3 = C.red, ZIndex = 42 }, actions.rematch)
+	self.rematch =
+		Widgets.button(row, "REMATCH", { Size = UDim2.fromScale(0.3, 1), BackgroundColor3 = C.red, ZIndex = 42 }, actions.rematch)
 	Widgets.button(row, "CHARACTER SELECT", { Size = UDim2.fromScale(0.36, 1), ZIndex = 42 }, actions.select)
 	Widgets.button(row, "MAIN MENU", { Size = UDim2.fromScale(0.28, 1), ZIndex = 42 }, actions.menu)
-	self.status = Widgets.text(root, "", { Size = UDim2.fromScale(0.6, 0.05), Position = UDim2.fromScale(0.5, 0.9), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 41 })
+	self.status = Widgets.text(
+		root,
+		"",
+		{ Size = UDim2.fromScale(0.6, 0.05), Position = UDim2.fromScale(0.5, 0.9), AnchorPoint = Vector2.new(0.5, 0), ZIndex = 41 }
+	)
 	return self
 end
 

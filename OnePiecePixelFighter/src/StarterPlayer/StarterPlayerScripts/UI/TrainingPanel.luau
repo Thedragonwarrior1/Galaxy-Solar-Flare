@@ -29,7 +29,12 @@ function TrainingPanel.new(parent: Instance, session: any, renderer: any)
 	layout.Parent = root
 	local self = setmetatable({ root = root, session = session, renderer = renderer, dummyIndex = 1 }, TrainingPanel)
 	local function btn(text: string, order: number, fn: () -> ()): TextButton
-		return Widgets.button(root, text, { Size = UDim2.fromScale(1, 0.1), LayoutOrder = order, ZIndex = 21, TextXAlignment = Enum.TextXAlignment.Left }, fn)
+		return Widgets.button(
+			root,
+			text,
+			{ Size = UDim2.fromScale(1, 0.1), LayoutOrder = order, ZIndex = 21, TextXAlignment = Enum.TextXAlignment.Left },
+			fn
+		)
 	end
 	self.dummyBtn = btn("", 1, function()
 		self:cycleDummy()

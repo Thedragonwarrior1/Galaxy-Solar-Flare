@@ -55,7 +55,11 @@ function MobileControls.new(gui: ScreenGui)
 	corner.Parent = pad
 	Widgets.stroke(pad, Color3.fromRGB(255, 255, 255), 2)
 	for _, d in { { "^", 0.5, 0.16 }, { "v", 0.5, 0.84 }, { "<", 0.16, 0.5 }, { ">", 0.84, 0.5 } } do
-		Widgets.text(pad, d[1], { Size = UDim2.fromScale(0.25, 0.25), Position = UDim2.fromScale(d[2], d[3]), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 51 })
+		Widgets.text(
+			pad,
+			d[1],
+			{ Size = UDim2.fromScale(0.25, 0.25), Position = UDim2.fromScale(d[2], d[3]), AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 51 }
+		)
 	end
 	local knob = Instance.new("Frame")
 	knob.Size = UDim2.fromScale(0.34, 0.34)
@@ -164,35 +168,44 @@ function MobileControls.new(gui: ScreenGui)
 		InputController.setTouch(held, pressed)
 	end
 
-	table.insert(self.conns, UserInputService.TouchStarted:Connect(function(io: InputObject)
-		if not root.Visible then
-			return
-		end
-		local kind, bit = classify(io)
-		if kind == "dpad" then
-			self.touches[io] = { kind = kind, bits = dpadBits(io) }
-		elseif kind == "button" then
-			self.touches[io] = { kind = kind, bits = bit }
-		end
-		recompute()
-	end))
-	table.insert(self.conns, UserInputService.TouchMoved:Connect(function(io: InputObject)
-		local t = self.touches[io]
-		if t and t.kind == "dpad" then
-			t.bits = dpadBits(io)
-			recompute()
-		end
-	end))
-	table.insert(self.conns, UserInputService.TouchEnded:Connect(function(io: InputObject)
-		local t = self.touches[io]
-		if t then
-			if t.kind == "dpad" then
-				knob.Position = UDim2.fromScale(0.5, 0.5)
+	table.insert(
+		self.conns,
+		UserInputService.TouchStarted:Connect(function(io: InputObject)
+			if not root.Visible then
+				return
 			end
-			self.touches[io] = nil
+			local kind, bit = classify(io)
+			if kind == "dpad" then
+				self.touches[io] = { kind = kind, bits = dpadBits(io) }
+			elseif kind == "button" then
+				self.touches[io] = { kind = kind, bits = bit }
+			end
 			recompute()
-		end
-	end))
+		end)
+	)
+	table.insert(
+		self.conns,
+		UserInputService.TouchMoved:Connect(function(io: InputObject)
+			local t = self.touches[io]
+			if t and t.kind == "dpad" then
+				t.bits = dpadBits(io)
+				recompute()
+			end
+		end)
+	)
+	table.insert(
+		self.conns,
+		UserInputService.TouchEnded:Connect(function(io: InputObject)
+			local t = self.touches[io]
+			if t then
+				if t.kind == "dpad" then
+					knob.Position = UDim2.fromScale(0.5, 0.5)
+				end
+				self.touches[io] = nil
+				recompute()
+			end
+		end)
+	)
 	return self
 end
 

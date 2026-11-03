@@ -30,13 +30,35 @@ CharacterSelect.__index = CharacterSelect
 local PREVIEW_W, PREVIEW_H = 170, 150
 local CYCLE = { "Idle", "Walk", "StandLight", "StandMedium", "StandHeavy", "CrouchHeavy", "AirHeavy", "Special", "Super", "Victory" }
 local INPUT_NAMES = {
-	StandLight = "J", StandMedium = "K", StandHeavy = "L",
-	CrouchLight = "S+J", CrouchMedium = "S+K", CrouchHeavy = "S+L",
-	AirLight = "air J", AirMedium = "air K", AirHeavy = "air L",
-	Special = "U", Special2 = "S+U", Super = "I (100%)", Counter = "(auto)",
+	StandLight = "J",
+	StandMedium = "K",
+	StandHeavy = "L",
+	CrouchLight = "S+J",
+	CrouchMedium = "S+K",
+	CrouchHeavy = "S+L",
+	AirLight = "air J",
+	AirMedium = "air K",
+	AirHeavy = "air L",
+	Special = "U",
+	Special2 = "S+U",
+	Super = "I (100%)",
+	Counter = "(auto)",
 }
-local MOVE_ORDER = { "StandLight", "StandMedium", "StandHeavy", "CrouchLight", "CrouchMedium", "CrouchHeavy",
-	"AirLight", "AirMedium", "AirHeavy", "Special", "Special2", "Counter", "Super" }
+local MOVE_ORDER = {
+	"StandLight",
+	"StandMedium",
+	"StandHeavy",
+	"CrouchLight",
+	"CrouchMedium",
+	"CrouchHeavy",
+	"AirLight",
+	"AirMedium",
+	"AirHeavy",
+	"Special",
+	"Special2",
+	"Counter",
+	"Super",
+}
 
 export type Options = {
 	mode: string,
@@ -67,9 +89,20 @@ local function preview(parent: Frame, slot: number)
 	if cv then
 		cv.label.ZIndex = 3
 	end
-	local name = Widgets.text(box, "", { Size = UDim2.fromScale(0.94, 0.08), Position = UDim2.fromScale(0.03, 0.62), Font = Widgets.TitleFont, TextColor3 = C.gold, ZIndex = 3 })
+	local name = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.94, 0.08),
+		Position = UDim2.fromScale(0.03, 0.62),
+		Font = Widgets.TitleFont,
+		TextColor3 = C.gold,
+		ZIndex = 3,
+	})
 	local sub = Widgets.text(box, "", { Size = UDim2.fromScale(0.94, 0.05), Position = UDim2.fromScale(0.03, 0.70), ZIndex = 3 })
-	local style = Widgets.text(box, "", { Size = UDim2.fromScale(0.94, 0.05), Position = UDim2.fromScale(0.03, 0.76), TextColor3 = if slot == 1 then C.p1 else C.p2, ZIndex = 3 })
+	local style = Widgets.text(box, "", {
+		Size = UDim2.fromScale(0.94, 0.05),
+		Position = UDim2.fromScale(0.03, 0.76),
+		TextColor3 = if slot == 1 then C.p1 else C.p2,
+		ZIndex = 3,
+	})
 	local desc = Widgets.text(box, "", {
 		Size = UDim2.fromScale(0.94, 0.16),
 		Position = UDim2.fromScale(0.03, 0.82),
@@ -85,8 +118,25 @@ local function preview(parent: Frame, slot: number)
 		TextColor3 = if slot == 1 then C.p1 else C.p2,
 		ZIndex = 4,
 	})
-	local moveLabel = Widgets.text(box, "", { Size = UDim2.fromScale(0.96, 0.05), Position = UDim2.fromScale(0.02, 0.56), ZIndex = 4, TextColor3 = C.meterFull })
-	return { box = box, canvas = cv, name = name, sub = sub, style = style, desc = desc, tag = tag, moveLabel = moveLabel, t = 0, cycle = 1, cycleT = 0, char = "" }
+	local moveLabel = Widgets.text(
+		box,
+		"",
+		{ Size = UDim2.fromScale(0.96, 0.05), Position = UDim2.fromScale(0.02, 0.56), ZIndex = 4, TextColor3 = C.meterFull }
+	)
+	return {
+		box = box,
+		canvas = cv,
+		name = name,
+		sub = sub,
+		style = style,
+		desc = desc,
+		tag = tag,
+		moveLabel = moveLabel,
+		t = 0,
+		cycle = 1,
+		cycleT = 0,
+		char = "",
+	}
 end
 
 function CharacterSelect.new(gui: ScreenGui, opts: Options)
@@ -171,7 +221,11 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 			table.insert(self.smallCanvases, pc)
 		end
 		Widgets.text(card, cfg.DisplayName, { Size = UDim2.fromScale(1, 0.11), Position = UDim2.fromScale(0, 0.78), ZIndex = 3 })
-		Widgets.text(card, cfg.Subtitle, { Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 0.89), TextColor3 = C.gold, ZIndex = 3 })
+		Widgets.text(
+			card,
+			cfg.Subtitle,
+			{ Size = UDim2.fromScale(1, 0.1), Position = UDim2.fromScale(0, 0.89), TextColor3 = C.gold, ZIndex = 3 }
+		)
 		card.MouseEnter:Connect(function()
 			self:moveCursorTo(i)
 		end)
@@ -189,7 +243,8 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 		Position = UDim2.fromScale(0.02, 0.77),
 		ZIndex = 2,
 	})
-	self.stageLabel = Widgets.text(bottom, "", { Size = UDim2.fromScale(0.3, 0.3), Position = UDim2.fromScale(0.35, 0), TextColor3 = C.gold, ZIndex = 3 })
+	self.stageLabel =
+		Widgets.text(bottom, "", { Size = UDim2.fromScale(0.3, 0.3), Position = UDim2.fromScale(0.35, 0), TextColor3 = C.gold, ZIndex = 3 })
 	Widgets.button(bottom, "<", { Size = UDim2.fromScale(0.05, 0.3), Position = UDim2.fromScale(0.29, 0), ZIndex = 3 }, function()
 		self:cycleStage(-1)
 	end)
@@ -200,23 +255,38 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 	Widgets.button(bottom, "BACK", { Size = UDim2.fromScale(0.14, 0.3), Position = UDim2.fromScale(0.0, 0.66), ZIndex = 3 }, function()
 		self:back()
 	end)
-	self.moveBtn = Widgets.button(bottom, "MOVE LIST", { Size = UDim2.fromScale(0.18, 0.3), Position = UDim2.fromScale(0.41, 0.66), ZIndex = 3 }, function()
-		self:toggleMoves()
-	end)
+	self.moveBtn = Widgets.button(
+		bottom,
+		"MOVE LIST",
+		{ Size = UDim2.fromScale(0.18, 0.3), Position = UDim2.fromScale(0.41, 0.66), ZIndex = 3 },
+		function()
+			self:toggleMoves()
+		end
+	)
 	if opts.mode == "versus" then
-		self.p2Btn = Widgets.button(bottom, "P2: CPU", { Size = UDim2.fromScale(0.16, 0.3), Position = UDim2.fromScale(0.62, 0.66), ZIndex = 3 }, function()
-			self.p2Human = not self.p2Human
-			self.p2Btn.Text = if self.p2Human then "P2: HUMAN" else "P2: CPU"
-		end)
+		self.p2Btn = Widgets.button(
+			bottom,
+			"P2: CPU",
+			{ Size = UDim2.fromScale(0.16, 0.3), Position = UDim2.fromScale(0.62, 0.66), ZIndex = 3 },
+			function()
+				self.p2Human = not self.p2Human
+				self.p2Btn.Text = if self.p2Human then "P2: HUMAN" else "P2: CPU"
+			end
+		)
 	end
-	self.goBtn = Widgets.button(bottom, if opts.mode == "online" then "FIND MATCH" elseif opts.mode == "inspect" then "TRAIN" else "FIGHT!", {
-		Size = UDim2.fromScale(0.18, 0.3),
-		Position = UDim2.fromScale(0.82, 0.66),
-		BackgroundColor3 = C.red,
-		ZIndex = 3,
-	}, function()
-		self:confirm(true)
-	end)
+	self.goBtn = Widgets.button(
+		bottom,
+		if opts.mode == "online" then "FIND MATCH" elseif opts.mode == "inspect" then "TRAIN" else "FIGHT!",
+		{
+			Size = UDim2.fromScale(0.18, 0.3),
+			Position = UDim2.fromScale(0.82, 0.66),
+			BackgroundColor3 = C.red,
+			ZIndex = 3,
+		},
+		function()
+			self:confirm(true)
+		end
+	)
 	-- move list panel
 	self.movePanel = Widgets.frame(root, {
 		Visible = false,
@@ -359,7 +429,11 @@ function CharacterSelect.refresh(self: any)
 		pv.style.Text = cfg.Style
 		pv.desc.Text = cfg.Description
 		if s == 2 then
-			local label = if self.mode == "training" then "DUMMY" elseif self.mode == "online" then "OPPONENT ?" elseif self.p2Human then "P2" else "CPU"
+			local label = if self.mode == "training"
+				then "DUMMY"
+				elseif self.mode == "online" then "OPPONENT ?"
+				elseif self.p2Human then "P2"
+				else "CPU"
 			pv.tag.Text = label
 			pv.box.Visible = self.mode ~= "online"
 		end
@@ -372,10 +446,23 @@ function CharacterSelect.refresh(self: any)
 			local m = c.moves[mid]
 			if m then
 				local hit, blk = AttackDefinitions.advantage(m)
-				table.insert(lines, string.format("%-8s %-22s %2d/%2d/%2d  %3d dmg  %s%d/%s%d%s",
-					INPUT_NAMES[mid] or mid, m.name, m.startup, m.active, m.recovery, m.damage * (if m.multi then m.multi.count else 1),
-					if hit >= 0 then "+" else "", hit, if blk >= 0 then "+" else "", blk,
-					if m.height == "low" then "  LOW" elseif m.height == "high" then "  OVERHEAD" else ""))
+				table.insert(
+					lines,
+					string.format(
+						"%-8s %-22s %2d/%2d/%2d  %3d dmg  %s%d/%s%d%s",
+						INPUT_NAMES[mid] or mid,
+						m.name,
+						m.startup,
+						m.active,
+						m.recovery,
+						m.damage * (if m.multi then m.multi.count else 1),
+						if hit >= 0 then "+" else "",
+						hit,
+						if blk >= 0 then "+" else "",
+						blk,
+						if m.height == "low" then "  LOW" elseif m.height == "high" then "  OVERHEAD" else ""
+					)
+				)
 			end
 		end
 		self.moveText.Text = table.concat(lines, "\n")
@@ -447,8 +534,14 @@ function CharacterSelect.step(self: any, dt: number)
 			Raster.rect(cv.surface, 0, PREVIEW_H - 10, PREVIEW_W, 10, Raster.rgb(26, 18, 44))
 			local wide = frame.w > PREVIEW_W - 20
 			local ox = if wide then 40 else PREVIEW_W / 2
-			Raster.sprite(cv.surface, frame, if s == 1 then ox else PREVIEW_W - ox, PREVIEW_H - 10, if s == 1 then 1 else -1,
-				cs.palettes[if s == 2 and self.cursor[1] == self.cursor[2] then 2 else 1])
+			Raster.sprite(
+				cv.surface,
+				frame,
+				if s == 1 then ox else PREVIEW_W - ox,
+				PREVIEW_H - 10,
+				if s == 1 then 1 else -1,
+				cs.palettes[if s == 2 and self.cursor[1] == self.cursor[2] then 2 else 1]
+			)
 			cv.present()
 		end
 	end

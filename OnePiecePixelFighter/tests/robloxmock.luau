@@ -53,9 +53,22 @@ M.Signal = Signal
 -- instances
 -- ---------------------------------------------------------------------------
 local EVENTS = {
-	Activated = true, MouseEnter = true, MouseLeave = true, MouseButton1Click = true, MouseButton1Down = true,
-	InputBegan = true, InputEnded = true, InputChanged = true, Changed = true, ChildAdded = true, ChildRemoved = true,
-	OnClientEvent = true, OnServerEvent = true, Ended = true, Played = true, Destroying = true,
+	Activated = true,
+	MouseEnter = true,
+	MouseLeave = true,
+	MouseButton1Click = true,
+	MouseButton1Down = true,
+	InputBegan = true,
+	InputEnded = true,
+	InputChanged = true,
+	Changed = true,
+	ChildAdded = true,
+	ChildRemoved = true,
+	OnClientEvent = true,
+	OnServerEvent = true,
+	Ended = true,
+	Played = true,
+	Destroying = true,
 }
 
 local function hasProperty(class, prop)
@@ -221,9 +234,11 @@ function Inst:FireClient(player, ...)
 end
 function Inst:FireAllClients(...) end
 
-M.Instance = { new = function(class)
-	return newInstance(class)
-end }
+M.Instance = {
+	new = function(class)
+		return newInstance(class)
+	end,
+}
 M.newInstance = newInstance
 
 -- ---------------------------------------------------------------------------
@@ -259,7 +274,10 @@ M.UserInputService = UIS
 
 function M.press(key)
 	keysDown[key] = true
-	UIS.InputBegan:Fire({ KeyCode = key, UserInputType = roblox.Enum.UserInputType.Keyboard, Position = roblox.Vector3.new(0, 0, 0) }, false)
+	UIS.InputBegan:Fire(
+		{ KeyCode = key, UserInputType = roblox.Enum.UserInputType.Keyboard, Position = roblox.Vector3.new(0, 0, 0) },
+		false
+	)
 end
 function M.release(key)
 	keysDown[key] = nil
@@ -365,9 +383,11 @@ H.globals.NumberSequence = roblox.NumberSequence
 H.globals.NumberSequenceKeypoint = roblox.NumberSequenceKeypoint
 H.globals.CFrame = roblox.CFrame
 H.globals.Enum = roblox.Enum
-H.globals.Content = { fromObject = function(o)
-	return { object = o }
-end }
+H.globals.Content = {
+	fromObject = function(o)
+		return { object = o }
+	end,
+}
 H.globals.task = task
 H.globals.workspace = workspaceMock
 H.globals.warn = function(...)

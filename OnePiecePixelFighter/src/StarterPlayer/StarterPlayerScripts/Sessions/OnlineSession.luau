@@ -38,28 +38,34 @@ function OnlineSession.new(remotes: any, start: any)
 		labels = if start.slot == 1 then { "YOU", start.opponentName or "RIVAL" } else { start.opponentName or "RIVAL", "YOU" },
 		paused = false,
 	}, OnlineSession)
-	table.insert(self.conns, remotes.State.OnClientEvent:Connect(function(b: any)
-		local v = Protocol.decode(b)
-		if v then
-			v.recv = self.clock
-			table.insert(self.snaps, v)
-			if #self.snaps > 12 then
-				table.remove(self.snaps, 1)
-			end
-		end
-	end))
-	table.insert(self.conns, remotes.Combat.OnClientEvent:Connect(function(list: any)
-		if type(list) == "table" then
-			for i, e in list do
-				if i > 60 then
-					break
-				end
-				if type(e) == "table" then
-					table.insert(self.events, e)
+	table.insert(
+		self.conns,
+		remotes.State.OnClientEvent:Connect(function(b: any)
+			local v = Protocol.decode(b)
+			if v then
+				v.recv = self.clock
+				table.insert(self.snaps, v)
+				if #self.snaps > 12 then
+					table.remove(self.snaps, 1)
 				end
 			end
-		end
-	end))
+		end)
+	)
+	table.insert(
+		self.conns,
+		remotes.Combat.OnClientEvent:Connect(function(list: any)
+			if type(list) == "table" then
+				for i, e in list do
+					if i > 60 then
+						break
+					end
+					if type(e) == "table" then
+						table.insert(self.events, e)
+					end
+				end
+			end
+		end)
+	)
 	return self
 end
 

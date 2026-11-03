@@ -17,14 +17,18 @@ end
 local function findButton(root, text)
 	local found = nil
 	local function walk(inst)
-		if found then return end
+		if found then
+			return
+		end
 		if rawget(inst, "__props") and inst.__props.Text == text and inst.__class == "TextButton" then
 			found = inst
 			return
 		end
 		local kids = rawget(inst, "__children")
 		if kids then
-			for _, c in kids do walk(c) end
+			for _, c in kids do
+				walk(c)
+			end
 		end
 	end
 	walk(root)
@@ -95,7 +99,8 @@ T.test("character select (inspect) cycles previews and move list", function()
 	frames(200)
 	click("MOVE LIST")
 	frames(30)
-	Mock.press(K.D) Mock.release(K.D)
+	Mock.press(K.D)
+	Mock.release(K.D)
 	frames(20)
 	noWarnings("inspect")
 	click("BACK")
@@ -106,32 +111,43 @@ end)
 T.test("training: pick fighters, attack, toggle hitboxes, reset, pause", function()
 	click("TRAINING")
 	frames(5)
-	Mock.press(K.J) Mock.release(K.J) -- P1 pick
+	Mock.press(K.J)
+	Mock.release(K.J) -- P1 pick
 	frames(5)
-	Mock.press(K.D) Mock.release(K.D)
-	Mock.press(K.J) Mock.release(K.J) -- dummy pick
+	Mock.press(K.D)
+	Mock.release(K.D)
+	Mock.press(K.J)
+	Mock.release(K.J) -- dummy pick
 	frames(10)
 	T.ok(findButton(Mock.playerGui, "RESET POSITIONS (R)"), "training panel visible")
-	Mock.press(K.H) Mock.release(K.H)
+	Mock.press(K.H)
+	Mock.release(K.H)
 	for _ = 1, 6 do
 		Mock.keysDown[K.D] = true
 		frames(20)
 		Mock.keysDown[K.D] = nil
 		for _, k in { K.J, K.K, K.L, K.U } do
-			Mock.press(k) frames(2) Mock.release(k) frames(14)
+			Mock.press(k)
+			frames(2)
+			Mock.release(k)
+			frames(14)
 		end
 	end
-	Mock.press(K.T) Mock.release(K.T)
-	Mock.press(K.R) Mock.release(K.R)
+	Mock.press(K.T)
+	Mock.release(K.T)
+	Mock.press(K.R)
+	Mock.release(K.R)
 	frames(30)
 	dump("training")
-	Mock.press(K.P) Mock.release(K.P)
+	Mock.press(K.P)
+	Mock.release(K.P)
 	frames(10)
 	T.ok(findButton(Mock.playerGui, "RESUME"), "pause menu")
 	click("RESUME")
 	frames(10)
 	noWarnings("training")
-	Mock.press(K.P) Mock.release(K.P)
+	Mock.press(K.P)
+	Mock.release(K.P)
 	click("MAIN MENU")
 	frames(10)
 end)
@@ -155,7 +171,9 @@ T.test("local test match vs CPU plays to the results screen and rematches", func
 		end
 		Mock.keysDown[K.D] = guard % 120 < 50
 		frames(1)
-		if guard == 900 then dump("versus") end
+		if guard == 900 then
+			dump("versus")
+		end
 	end
 	Mock.keysDown[K.D] = nil
 	T.ok(findButton(Mock.playerGui, "REMATCH"), "results never appeared")
@@ -164,7 +182,8 @@ T.test("local test match vs CPU plays to the results screen and rematches", func
 	click("REMATCH")
 	frames(60)
 	T.ok(not findButton(Mock.playerGui, "REMATCH"), "rematch restarts the fight")
-	Mock.press(K.P) Mock.release(K.P)
+	Mock.press(K.P)
+	Mock.release(K.P)
 	click("MAIN MENU")
 	frames(5)
 end)
@@ -174,7 +193,8 @@ T.test("online 1v1 against the real server services through mock remotes", funct
 	click("ONLINE 1V1")
 	frames(5)
 	-- App.start grabbed remotes only if they existed at boot: make sure it can queue
-	Mock.press(K.J) Mock.release(K.J)
+	Mock.press(K.J)
+	Mock.release(K.J)
 	frames(5)
 	-- rival queues directly
 	remotes.Match.OnServerEvent:Fire(rival, { op = "queue", char = "Katakuri" })
@@ -191,14 +211,22 @@ T.test("online 1v1 against the real server services through mock remotes", funct
 			remotes.Input.OnServerEvent:Fire(rival, seq, if i % 40 < 3 then 16 else 0, 0)
 		end
 		Mock.keysDown[K.D] = i % 100 < 40
-		if i % 15 == 0 then Mock.press(K.J) elseif i % 15 == 2 then Mock.release(K.J) end
+		if i % 15 == 0 then
+			Mock.press(K.J)
+		elseif i % 15 == 2 then
+			Mock.release(K.J)
+		end
 		frames(1)
-		if i == 1200 then dump("online") end
+		if i == 1200 then
+			dump("online")
+		end
 	end
 	Mock.keysDown[K.D] = nil
 	local started = false
 	for _, m in rivalInbox do
-		if m[1] == "MatchRemote" and m[2].op == "start" then started = true end
+		if m[1] == "MatchRemote" and m[2].op == "start" then
+			started = true
+		end
 	end
 	T.ok(started, "server never started the match")
 	noWarnings("online")

@@ -13,7 +13,7 @@ from rig import Palette, add, mix, norm, sub
 def palette(variant: str, alt: bool = False) -> Palette:
     p = Palette(outline=(24, 14, 28))
     if variant == "g2":
-        p.auto("skin", (238, 148, 128), 4, hue=0.02)   # flushed Gear 2 skin
+        p.ramp("skin", [(255, 200, 196), (240, 150, 152), (206, 104, 118), (150, 64, 90)])  # flushed, steaming Gear 2 skin
     elif variant == "g5":
         p.ramp("skin", [(252, 216, 168), (236, 182, 124), (204, 138, 96), (156, 96, 76)])
     else:
@@ -223,7 +223,7 @@ def _arm(fr, sk, b, p, side, z, variant, tick):
         n = (-d[1], d[0])
         for o in (-2.5, 2.0):
             fr.line(add(mix(el, wr, 0.15), n, o * 0.7), add(mix(el, wr, 0.85), n, o), p["hakired"][1], z + 0.7)
-        r = b.hand * sk.pose.get("fistscale", 1.0)
+        r = b.hand * (sk.pose.get("fistscale", 1.0) if side == "F" else sk.pose.get("fistscaleN", 1.0))
         c = fist(fr, sk, side, r, p["haki"], z + 1, group=grp + "h", bias=bias)
         # knuckle ridge
         k0 = add(c, d, r * 0.45)
@@ -240,7 +240,8 @@ def _arm(fr, sk, b, p, side, z, variant, tick):
         fr.ellipse(sh, 3.4, 3.0, p["vest"], z + 0.4, group=grp + "s", bias=bias)
     elif variant == "g2":
         fr.ellipse(sh, 3.2, 2.8, p["vest"], z + 0.4, group=grp + "s", bias=bias)
-    fist(fr, sk, side, b.hand * sk.pose.get("fistscale", 1.0), p["skin"], z + 0.6, group=grp, bias=bias, shape=shape)
+    scale = sk.pose.get("fistscale", 1.0) if side == "F" else sk.pose.get("fistscaleN", 1.0)
+    fist(fr, sk, side, b.hand * scale, p["skin"], z + 0.6, group=grp, bias=bias, shape=shape)
 
 
 def _leg(fr, sk, b, p, side, z, variant):

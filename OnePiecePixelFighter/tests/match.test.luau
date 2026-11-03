@@ -30,7 +30,9 @@ T.test("CPU vs CPU matches finish for every fighter", function()
 		while m.phase ~= "matchEnd" and frames < 60 * 60 * 6 do
 			m:step(a:think(m), b:think(m))
 			for _, e in m.events do
-				if e.type == "hit" then hits += 1 end
+				if e.type == "hit" then
+					hits += 1
+				end
 			end
 			invariants(m)
 			frames += 1
@@ -39,7 +41,9 @@ T.test("CPU vs CPU matches finish for every fighter", function()
 		T.ok(hits > 10, id .. " vs " .. opp .. " only " .. hits .. " hits")
 		table.insert(stats, string.format("%s vs %s: winner P%d in %ds, %d hits", id, opp, m.result, frames // 60, hits))
 	end
-	for _, s in stats do print("       " .. s) end
+	for _, s in stats do
+		print("       " .. s)
+	end
 end)
 
 T.test("random input fuzzing keeps the simulation valid", function()
@@ -53,8 +57,12 @@ T.test("random input fuzzing keeps the simulation valid", function()
 		m.training.infiniteMeter = true
 		local b1, b2 = 0, 0
 		for f = 1, 4000 do
-			if f % 3 == 0 then b1 = rnd() % 2048 end
-			if f % 4 == 0 then b2 = rnd() % 2048 end
+			if f % 3 == 0 then
+				b1 = rnd() % 2048
+			end
+			if f % 4 == 0 then
+				b2 = rnd() % 2048
+			end
 			m:step(b1, b2)
 			invariants(m)
 		end

@@ -121,18 +121,44 @@ local function makeEnv(node)
 		return requireNode(target)
 	end
 	env.game = game
-	return setmetatable(env, { __index = function(_, k)
-		return Harness.globals[k]
-	end })
+	return setmetatable(env, {
+		__index = function(_, k)
+			return Harness.globals[k]
+		end,
+	})
 end
 
 Harness.globals = {
-	math = math, string = string, table = table, buffer = buffer, bit32 = bit32, utf8 = utf8,
-	os = os, coroutine = coroutine, debug = debug,
-	pairs = pairs, ipairs = ipairs, next = next, select = select, type = type, typeof = typeof,
-	tostring = tostring, tonumber = tonumber, error = error, assert = assert, pcall = pcall, xpcall = xpcall,
-	setmetatable = setmetatable, getmetatable = getmetatable, rawget = rawget, rawset = rawset,
-	rawequal = rawequal, rawlen = rawlen, print = print, warn = print, unpack = table.unpack,
+	math = math,
+	string = string,
+	table = table,
+	buffer = buffer,
+	bit32 = bit32,
+	utf8 = utf8,
+	os = os,
+	coroutine = coroutine,
+	debug = debug,
+	pairs = pairs,
+	ipairs = ipairs,
+	next = next,
+	select = select,
+	type = type,
+	typeof = typeof,
+	tostring = tostring,
+	tonumber = tonumber,
+	error = error,
+	assert = assert,
+	pcall = pcall,
+	xpcall = xpcall,
+	setmetatable = setmetatable,
+	getmetatable = getmetatable,
+	rawget = rawget,
+	rawset = rawset,
+	rawequal = rawequal,
+	rawlen = rawlen,
+	print = print,
+	warn = print,
+	unpack = table.unpack,
 }
 
 function requireNode(node)
