@@ -1,0 +1,141 @@
+// EMBER KING — fire projectile specialist. Zones with chargeable fireballs, explodes up close.
+import { defineCharacter, thrust } from './common.js';
+import { BTN } from '../sim/constants.js';
+import { shoot, zoneAt } from './helpers.js';
+
+export default defineCharacter({
+  id: 'ember_king',
+  name: 'Ember King',
+  title: 'Sovereign of the Burning Sea',
+  style: 'Fire Projectile Specialist',
+  personality: 'Brave, proud and aggressive.',
+  desc: 'A crowned pirate king who commands fire. Pressures from range with chargeable fireballs, bursts through foes with flaming dashes, and erupts into the sky to recover.',
+  palette: { primary: '#b5179e', secondary: '#1b1b1e', accent: '#ff5400', ui: '#ff5400' },
+  ratings: { power: 4, speed: 3, range: 4, defense: 3, recovery: 3, difficulty: 2 },
+  stats: {
+    weight: 104, runSpeed: 11, walkSpeed: 4.9, groundAccel: 62, friction: 55,
+    airSpeed: 8, airAccel: 28, airFriction: 6, gravity: 44, fallSpeed: 15, fastFall: 23,
+    jumpVel: 17.8, djumpVel: 15.5, airJumps: 1, radius: 0.48, height: 1.86,
+  },
+  throwName: 'Flaming Suplex', throwDmg: 10,
+  abilities: [{ key: 'Q', move: 'sp1' }, { key: 'E', move: 'sp2' }, { key: 'R', move: 'sp3' }, { key: 'F', move: 'ult' }],
+  ai: { range: 2.0, projectile: 'sp1', projRange: [5, 16], poke: 'sp2', pokeRange: [4, 8], kill: 'fwdHeavy', antiAir: 'upHeavy', combo: 'jab1', ultRange: 14 },
+  projectiles: {
+    fireball: { r: 0.55, speed: 17, life: 75, grav: 0, dmg: 8, ang: 45, bkb: 32, kbg: 60, el: 'fire', dir: 'proj', ground: 'die',
+      explode: { r: 1.5, dmg: 3, ang: 60, bkb: 30, kbg: 40, el: 'fire', dur: 4 } },
+    sunball: { r: 2.4, speed: 9.5, life: 100, grav: 0, dmg: 8, ang: 55, bkb: 60, kbg: 50, el: 'fire', dir: 'proj', ground: 'die', ult: true, expireExplode: true,
+      explode: { r: 6.6, dmg: 26, ang: 58, bkb: 86, kbg: 82, el: 'fire', dur: 8, shield: 3, ult: true } },
+  },
+  moves: {
+    jab1: {
+      name: 'Ember Jab', total: 18,
+      fx: { handL: [...thrust('handL', { a: -5, h: 1.35, r0: 0.4, r1: 1.4, ext: 3, hold: 3, back: 7 }), [18, null]] },
+      pose: [[0, { twist: 10 }], [3, { twist: -20, lean: 6 }], [18, { twist: 0 }]],
+      hb: [{ f: [3, 5], at: 'handL', r: 0.5, dmg: 2.5, ang: 25, bkb: 10, kbg: 35, el: 'fire' }],
+      next: { move: 'jab2', btn: 'ATTACK', from: 4, to: 17 },
+      sfx: [[2, 'punch_light']],
+    },
+    jab2: {
+      name: 'Ember Cross', total: 20,
+      fx: { handR: [...thrust('handR', { a: 5, h: 1.35, r0: 0.4, r1: 1.5, ext: 3, hold: 3, back: 8 }), [20, null]] },
+      pose: [[0, { twist: -10 }], [3, { twist: 24, lean: 8 }], [20, { twist: 0 }]],
+      hb: [{ f: [3, 6], at: 'handR', r: 0.5, dmg: 3, ang: 28, bkb: 12, kbg: 40, el: 'fire' }],
+      next: { move: 'jab3', btn: 'ATTACK', from: 4, to: 19 },
+      sfx: [[2, 'punch_light']],
+    },
+    jab3: {
+      name: 'Flare Palm', desc: 'A palm strike that detonates in a burst of flame.', total: 32,
+      fx: { handR: [[0, 40, 0.4, 1.2], [5, 60, 0.5, 1.3], [9, 0, 1.45, 1.25, 'snap'], [14, 0, 1.4, 1.25], [32, null]] },
+      pose: [[0, { twist: 0 }], [5, { twist: -25, crouch: 0.15 }], [9, { twist: 25, lean: 14 }], [32, { twist: 0, lean: 0, crouch: 0 }]],
+      hb: [{ f: [9, 12], at: 'handR', ext: 0.3, r: 0.85, dmg: 6, ang: 40, bkb: 50, kbg: 80, el: 'fire' }],
+      sfx: [[8, 'fire_burst']],
+    },
+    dash: {
+      name: 'Comet Shoulder', total: 34,
+      fx: { handR: [[0, 60, 0.4, 1.0], [5, 90, 0.4, 1.0], [26, 90, 0.4, 1.0], [34, null]], handL: [[0, -60, 0.4, 1.0], [5, -40, 0.5, 1.2], [26, -40, 0.5, 1.2], [34, null]] },
+      pose: [[0, { lean: 10 }], [5, { lean: 30, twist: -30 }], [20, { lean: 20, twist: -20 }], [34, { lean: 0, twist: 0 }]],
+      mv: [{ f: [2, 12], fwd: 15 }, { f: [13, 18], fwd: 5 }],
+      hb: [{ f: [4, 12], p: [0, 0.6, 1.1], r: 0.8, dmg: 10, ang: 40, bkb: 60, kbg: 55, el: 'fire' }],
+      sfx: [[2, 'fire_whoosh']],
+    },
+    upHeavy: {
+      name: 'Flame Pillar Uppercut', desc: 'Charge, then an uppercut that raises a column of fire.', total: 46,
+      charge: { at: 5, max: 60, btn: BTN.HEAVY },
+      fx: { handR: [[0, 30, 0.4, 1.0], [5, 15, 0.5, 0.55], [10, 5, 0.8, 1.7, 'snap'], [14, 0, 0.5, 2.7], [22, 0, 0.45, 2.6], [46, null]] },
+      pose: [[0, { crouch: 0.1 }], [5, { crouch: 0.55, lean: 15 }], [11, { crouch: 0, lean: -12, lift: 0.2 }], [24, { lean: -6, lift: 0 }], [46, { lean: 0 }]],
+      hb: [{ f: [10, 14], at: 'handR', r: 0.75, dmg: 13, ang: 88, bkb: 42, kbg: 94, el: 'fire' }],
+      events: [{ f: 11, fn: (w, f) => { const z = zoneAt(w, f, 'flamePillar', [0, 1.0, 0], { r: 1.1, h: 4.5, life: 14, visual: 'flamePillar', hit: { dmg: 6, ang: 90, bkb: 55, kbg: 70, el: 'fire', dir: 'radial', from: 0, to: 6 } }); z.dmgMult = 1 + 0.45 * f.charge / 60; } }],
+      sfx: [[10, 'flame_roar']],
+    },
+    fwdHeavy: {
+      name: 'Solar Fist', desc: 'A wind-up haymaker that explodes on contact.', total: 50,
+      charge: { at: 7, max: 60, btn: BTN.HEAVY },
+      fx: { handR: [[0, 40, 0.4, 1.3], [7, 150, 0.7, 1.5], [12, 100, 0.6, 1.4], [15, 0, 1.55, 1.3, 'snap'], [21, 0, 1.5, 1.3], [34, 20, 0.5, 1.2], [50, null]] },
+      pose: [[0, { twist: 0 }], [7, { twist: -55, lean: -8, crouch: 0.2 }], [15, { twist: 30, lean: 20, crouch: 0.2 }], [30, { twist: 15, lean: 10 }], [50, { twist: 0, lean: 0, crouch: 0 }]],
+      mv: [{ f: [12, 15], fwd: 6 }],
+      hb: [{ f: [13, 17], at: 'handR', ext: 0.25, r: 0.85, dmg: 17, ang: 38, bkb: 36, kbg: 94, el: 'fire', hitlag: 1.2 }],
+      sfx: [[6, 'fire_whoosh'], [14, 'explosion_small']],
+    },
+    nair: {
+      name: 'Ring of Fire', kind: 'air', total: 30, landLag: 8,
+      fx: { handR: [[0, 40, 0.4, 1.2], [5, 90, 0.9, 1.0, 'out'], [14, 90, 0.9, 1.0], [30, null]], handL: [[0, -40, 0.4, 1.2], [5, -90, 0.9, 1.0, 'out'], [14, -90, 0.9, 1.0], [30, null]] },
+      pose: [[0, { tuck: 0.2 }], [5, { tuck: 0.5 }], [14, { tuck: 0.5 }], [30, { tuck: 0 }]],
+      hb: [{ f: [5, 14], p: [0, 0, 1.0], r: 1.5, dmg: 8, ang: 50, bkb: 32, kbg: 70, el: 'fire', dir: 'radial' }],
+      sfx: [[4, 'fire_burst']],
+    },
+    fair: {
+      name: 'Blazing Hammer', desc: 'Both fists come down wreathed in fire.', kind: 'air', total: 38, landLag: 13,
+      fx: {
+        handR: [[0, 10, 0.4, 1.4], [5, 5, 0.3, 2.3, 'out'], [10, 5, 1.2, 0.7, 'snap'], [14, 5, 1.1, 0.6], [38, null]],
+        handL: [[0, -10, 0.4, 1.4], [5, -5, 0.3, 2.3, 'out'], [10, -5, 1.2, 0.7, 'snap'], [14, -5, 1.1, 0.6], [38, null]],
+      },
+      pose: [[0, { lean: 0 }], [5, { lean: -20 }], [10, { lean: 25 }], [38, { lean: 0 }]],
+      hb: [{ f: [9, 12], at: 'handR', r: 0.85, dmg: 14, ang: 40, bkb: 30, kbg: 95, el: 'fire' }],
+      sfx: [[8, 'fire_whoosh']],
+    },
+    dair: {
+      name: 'Magma Stomp', kind: 'air', total: 38, landLag: 14,
+      fx: { footR: [[0, 0, 0.3, 0.6], [5, 0, 0.3, 0.9], [9, 0, 0.35, -0.6, 'snap'], [14, 0, 0.35, -0.55], [38, null]] },
+      pose: [[0, { tuck: 0.2 }], [5, { tuck: 0.7 }], [9, { tuck: 0 }], [38, { tuck: 0 }]],
+      hb: [{ f: [9, 12], at: 'footR', r: 0.85, dmg: 13, ang: -65, bkb: 25, kbg: 82, el: 'fire' }],
+      sfx: [[8, 'fire_burst']],
+    },
+    sp1: {
+      name: 'Fireball', desc: 'Q — hurls a fireball that bursts on impact. Hold Q to grow it.', kind: 'any', total: 32, cooldown: 52, aim: 'far', gravity: 0.5,
+      charge: { at: 6, max: 45, btn: BTN.SP1 },
+      fx: { handR: [[0, 30, 0.4, 1.2], [6, 140, 0.6, 1.4], [10, 0, 1.3, 1.35, 'snap'], [14, 0, 1.25, 1.35], [32, null]] },
+      pose: [[0, { twist: 0 }], [6, { twist: -45, lean: -5 }], [10, { twist: 25, lean: 12 }], [32, { twist: 0, lean: 0 }]],
+      events: [{ f: 10, fn: (w, f) => {
+        const c = f.charge / 45;
+        shoot(w, f, 'fireball', [0, 1.3, 1.35], { over: { dmgMult: 1 + 0.7 * c, r: 0.55 + 0.35 * c } });
+      } }],
+      projectileFrame: 10, dmgReadout: 8,
+      sfx: [[9, 'fireball']],
+    },
+    sp2: {
+      name: 'Fire Dash', desc: 'E — becomes a streak of flame and rams forward. Usable in the air.', kind: 'any', total: 36, cooldown: 110, edgeStop: false,
+      fx: { handR: [[0, 60, 0.4, 1.0], [4, 30, 0.6, 1.1], [18, 30, 0.6, 1.1], [36, null]], handL: [[0, -60, 0.4, 1.0], [4, -30, 0.6, 1.1], [18, -30, 0.6, 1.1], [36, null]] },
+      pose: [[0, { lean: 10, crouch: 0.3 }], [4, { lean: 45 }], [17, { lean: 45 }], [36, { lean: 0, crouch: 0 }]],
+      mv: [{ f: [4, 17], fwd: 24, up: 0, grav: 0 }, { f: [18, 22], fwd: 5, grav: 0.4 }],
+      hb: [{ f: [4, 17], p: [0, 0.6, 1.0], r: 0.95, dmg: 9, ang: 45, bkb: 55, kbg: 62, el: 'fire' }],
+      sfx: [[3, 'flame_roar']],
+    },
+    sp3: {
+      name: 'Eruption Leap', desc: 'R — detonates the ground beneath him and rides the blast skyward.', kind: 'any', total: 42, helpless: true, landLag: 16, ledgeGrab: 12,
+      fx: { handR: [[0, 40, 0.4, 1.0], [8, 30, 0.4, 2.2], [30, 30, 0.4, 2.2], [42, null]], handL: [[0, -40, 0.4, 1.0], [8, -30, 0.4, 2.2], [30, -30, 0.4, 2.2], [42, null]] },
+      pose: [[0, { crouch: 0.5 }], [8, { crouch: 0, armsUp: 1 }], [30, { armsUp: 1 }], [42, { armsUp: 0 }]],
+      events: [{ f: 8, fn: (w, f) => { w.explode(f, f.pos.x, f.pos.y + 0.3, f.pos.z, { r: 2.3, dmg: 10, ang: 70, bkb: 50, kbg: 70, el: 'fire', dur: 5 }); } }],
+      mv: [{ f: [8, 22], up: 24, fwd: 4.5, grav: 0.15, control: 'air' }],
+      sfx: [[8, 'explosion_small']],
+    },
+    ult: {
+      name: 'Sovereign Sun', desc: 'F — raises a miniature sun overhead and hurls it. It erupts in a colossal explosion.', kind: 'any', ult: true, cinematic: 44, total: 72, gravity: 0, airControl: 0, aim: 'far',
+      tele: { shape: 'line', len: 14, width: 5 },
+      fx: { handR: [[0, 30, 0.4, 1.2], [30, 15, 0.4, 2.4], [48, 15, 0.4, 2.4], [54, 0, 1.0, 1.6, 'snap'], [72, null]], handL: [[0, -30, 0.4, 1.2], [30, -15, 0.4, 2.4], [48, -15, 0.4, 2.4], [54, 0, 1.0, 1.6, 'snap'], [72, null]] },
+      pose: [[0, { armsUp: 0 }], [30, { armsUp: 1, lean: -10 }], [48, { armsUp: 1, lean: -14 }], [54, { armsUp: 0, lean: 20 }], [72, { lean: 0 }]],
+      events: [{ f: 53, fn: (w, f) => { shoot(w, f, 'sunball', [0, 0.6, 3.2], { pitch: -0.12 }); } }],
+      projectileFrame: 53, dmgReadout: 34,
+      sfx: [[0, 'ult_ember']],
+    },
+  },
+});
