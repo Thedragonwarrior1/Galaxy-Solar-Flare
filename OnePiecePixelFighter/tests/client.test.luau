@@ -41,8 +41,137 @@ local function click(text)
 end
 local function dump(name)
 	local img = Mock.images[1]
+	if not img or not img.last then
+		return
+	end
 	fs.writeFile("tests/out/client_" .. name .. ".rgba", buffer.tostring(img.last))
 end
+-- In GUI-fallback mode, flatten the scene's Frames into rectangles (virtual 320x180 px)
+local function dumpGui(name)
+	if not Mock.noEditable then
+		return
+	end
+	local screen
+	for _, g in Mock.playerGui.__children do
+		for _, c in g.__children do
+			if c.__props.Name == "Screen" then
+				screen = c
+			end
+		end
+	end
+	if not screen then
+		return
+	end
+	local out = {}
+	local function walk(inst, x, y, w, h)
+		for _, c in inst.__children do
+			local p = c.__props
+			if c.__class == "Frame" and p.Visible ~= false then
+				local pos, size = p.Position, p.Size
+				local cx = x + (pos and pos.X.Scale or 0) * w
+				local cy = y + (pos and pos.Y.Scale or 0) * h
+				local cw = (size and size.X.Scale or 0) * w
+				local ch = (size and size.Y.Scale or 0) * h
+				local ap = p.AnchorPoint
+				if ap then
+					cx -= ap.X * cw
+					cy -= ap.Y * ch
+				end
+				local round, stroke = false, nil
+				for _, k in c.__children do
+					if k.__class == "UICorner" then
+						round = true
+					end
+					if k.__class == "UIStroke" then
+						stroke = k.__props.Color
+					end
+				end
+				local col = p.BackgroundColor3
+				local tr = p.BackgroundTransparency or 0
+				table.insert(out, {
+					z = p.ZIndex or 1,
+					depth = #out,
+					x = cx,
+					y = cy,
+					w = cw,
+					h = ch,
+					rot = p.Rotation or 0,
+					r = col and math.floor(col.R * 255) or 0,
+					g = col and math.floor(col.G * 255) or 0,
+					b = col and math.floor(col.B * 255) or 0,
+					a = 1 - tr,
+					round = round,
+					sr = stroke and math.floor(stroke.R * 255),
+					sg = stroke and math.floor(stroke.G * 255),
+					sb = stroke and math.floor(stroke.B * 255),
+				})
+				walk(c, cx, cy, cw, ch)
+			end
+		end
+	end
+	local scene = nil
+	for _, c in screen.__children do
+		if c.__props.Name == "Scene" then
+			scene = c
+		end
+	end
+	-- draw order: siblings by ZIndex, depth-first
+	local ordered = {}
+	local function walkOrdered(inst, x, y, w, h)
+		local kids = table.clone(inst.__children)
+		table.sort(kids, function(a, b)
+			return (a.__props.ZIndex or 1) < (b.__props.ZIndex or 1)
+		end)
+		for _, c in kids do
+			local p = c.__props
+			if c.__class == "Frame" and p.Visible ~= false then
+				local pos, size = p.Position, p.Size
+				local cw = (size and size.X.Scale or 0) * w
+				local ch = (size and size.Y.Scale or 0) * h
+				local cx = x + (pos and pos.X.Scale or 0) * w
+				local cy = y + (pos and pos.Y.Scale or 0) * h
+				local ap = p.AnchorPoint
+				if ap then
+					cx -= ap.X * cw
+					cy -= ap.Y * ch
+				end
+				local round, stroke = false, nil
+				for _, k in c.__children do
+					if k.__class == "UICorner" then
+						round = true
+					end
+					if k.__class == "UIStroke" then
+						stroke = k.__props.Color
+					end
+				end
+				local col = p.BackgroundColor3
+				table.insert(
+					ordered,
+					string.format(
+						"%.3f %.3f %.3f %.3f %.1f %d %d %d %.2f %d %s",
+						cx,
+						cy,
+						cw,
+						ch,
+						p.Rotation or 0,
+						col and math.floor(col.R * 255 + 0.5) or 0,
+						col and math.floor(col.G * 255 + 0.5) or 0,
+						col and math.floor(col.B * 255 + 0.5) or 0,
+						1 - (p.BackgroundTransparency or 0),
+						if round then 1 else 0,
+						if stroke then string.format("%d,%d,%d", stroke.R * 255, stroke.G * 255, stroke.B * 255) else "-"
+					)
+				)
+				walkOrdered(c, cx, cy, cw, ch)
+			end
+		end
+	end
+	if scene then
+		walkOrdered(scene, 0, 0, 320, 180)
+	end
+	fs.writeFile("tests/out/gui_" .. name .. ".txt", table.concat(ordered, "\n"))
+end
+
 local function noWarnings(where)
 	T.eq(Mock.warnings or 0, 0, "warnings during " .. where)
 end
@@ -86,12 +215,17 @@ T.test("client boots into the main menu with an attract match", function()
 	App.start()
 	frames(240)
 	noWarnings("menu")
-	T.ok(Mock.images[1].writes >= 200, "canvas presented " .. Mock.images[1].writes .. " frames")
+	if Mock.noEditable then
+		T.eq(#Mock.images, 0)
+	else
+		T.ok(Mock.images[1].writes >= 200, "canvas presented " .. Mock.images[1].writes .. " frames")
+	end
 	T.ok(findButton(Mock.playerGui, "ONLINE 1V1"))
 	T.ok(findButton(Mock.playerGui, "TRAINING"))
 	T.ok(findButton(Mock.playerGui, "LOCAL TEST MATCH"))
 	T.ok(findButton(Mock.playerGui, "CHARACTER SELECT"))
 	dump("menu")
+	dumpGui("menu")
 end)
 
 T.test("character select (inspect) cycles previews and move list", function()
@@ -139,6 +273,7 @@ T.test("training: pick fighters, attack, toggle hitboxes, reset, pause", functio
 	Mock.release(K.R)
 	frames(30)
 	dump("training")
+	dumpGui("training")
 	Mock.press(K.P)
 	Mock.release(K.P)
 	frames(10)

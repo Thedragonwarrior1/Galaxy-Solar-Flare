@@ -38,12 +38,14 @@ Then connect from the Rojo plugin in Studio. To rebuild the place file yourself:
 rojo build default.project.json -o build/OnePiecePixelFighter.rbxl
 ```
 
-**Before publishing**, set the following:
+**Before publishing**, set **Players per server** to an even number (for example 8). Every pair in the queue gets its own match.
 
-- **Game Settings → Security → Allow Mesh / Image APIs**: must be on. The renderer draws into an `EditableImage`. Studio play-tests support it by default.
-- **Players per server:** set it to an even number (for example 8). Every pair in the queue gets its own match.
+**Renderer backends.** The game picks its renderer automatically. Nothing needs configuring:
 
-If `EditableImage` can't be created, the game shows a screen explaining exactly this setting instead of failing silently.
+- **EditableImage** (pixel-perfect, fastest) is used when Roblox allows it. That means Studio play-tests, or published games whose owner is **13+ and ID-verified** and has turned on **File → Game Settings → Security → Allow Mesh & Image APIs**. That Security option only appears after the game has been published.
+- **GUI frames** are used everywhere else. The fallback draws the same pixel art with ordinary Roblox Frames: sprites as merged same-colour rectangles, stages built once and scrolled. It needs no settings or verification. The only visual difference is that dash and super afterimages are skipped.
+
+To test the fallback in Studio, set `Canvas.ForceGui = true` in `StarterPlayerScripts/Render/Canvas.luau`.
 
 ---
 
@@ -202,6 +204,10 @@ Offline, the renderer costs about 2.5–4.5 ms per frame. On a slow device the c
 
 ```bash
 lune run tests/run.luau          # 41 tests
+```
+
+```bash
+lune run tests/run_gui.luau      # the same client run with EditableImage unavailable (GUI fallback, ~8 min)
 ```
 
 ```bash

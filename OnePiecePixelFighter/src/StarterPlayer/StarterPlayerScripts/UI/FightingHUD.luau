@@ -43,9 +43,9 @@ local function side(self: any, root: Frame, slot: number, charId: string, palett
 	local pc = Canvas.small(pf, cs.portrait.w, cs.portrait.h)
 	if pc then
 		pc.label.ZIndex = 6
-		Raster.fill(pc.surface, Raster.rgb(40, 30, 64))
+		pc.R.fill(pc.surface, Raster.rgb(40, 30, 64))
 		local pal = cs.palettes[palette + 1] or cs.palettes[1]
-		Raster.sprite(pc.surface, cs.portrait, if left then 0 else cs.portrait.w, 0, if left then 1 else -1, pal)
+		pc.R.sprite(pc.surface, cs.portrait, if left then 0 else cs.portrait.w, 0, if left then 1 else -1, pal)
 		pc.present()
 	end
 	-- health bar

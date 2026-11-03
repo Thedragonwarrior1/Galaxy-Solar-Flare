@@ -99,7 +99,7 @@ local function startSession(session: any, stage: string)
 	state.session = session
 	state.stats = { best = { 0, 0 } }
 	if not state.renderer then
-		state.renderer = Renderer.new(canvas.surface, stage)
+		state.renderer = Renderer.new(canvas.surface, stage, canvas.R)
 	else
 		state.renderer:setStage(stage)
 		state.renderer.hitboxes = false

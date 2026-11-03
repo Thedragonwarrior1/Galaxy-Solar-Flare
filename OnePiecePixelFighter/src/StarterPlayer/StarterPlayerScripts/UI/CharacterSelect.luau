@@ -215,8 +215,8 @@ function CharacterSelect.new(gui: ScreenGui, opts: Options)
 		local pc = Canvas.small(art, cs.portrait.w, cs.portrait.h)
 		if pc then
 			pc.label.ZIndex = 3
-			Raster.fill(pc.surface, Raster.rgb(48, 34, 74))
-			Raster.sprite(pc.surface, cs.portrait, 0, 0, 1, cs.palettes[1])
+			pc.R.fill(pc.surface, Raster.rgb(48, 34, 74))
+			pc.R.sprite(pc.surface, cs.portrait, 0, 0, 1, cs.palettes[1])
 			pc.present()
 			table.insert(self.smallCanvases, pc)
 		end
@@ -529,12 +529,16 @@ function CharacterSelect.step(self: any, dt: number)
 			local anim = fd[animName] or fd.Idle
 			local row = Timeline.stateRow(anim, pv.t)
 			local frame = SpriteLibrary.sheet(cs, anim.sheet)[anim.frames[row].f]
-			Raster.fill(cv.surface, Raster.rgb(40, 28, 64))
+			local R = cv.R
+			if R.begin then
+				R.begin(cv.surface)
+			end
+			R.fill(cv.surface, Raster.rgb(40, 28, 64))
 			-- floor line
-			Raster.rect(cv.surface, 0, PREVIEW_H - 10, PREVIEW_W, 10, Raster.rgb(26, 18, 44))
+			R.rect(cv.surface, 0, PREVIEW_H - 10, PREVIEW_W, 10, Raster.rgb(26, 18, 44))
 			local wide = frame.w > PREVIEW_W - 20
 			local ox = if wide then 40 else PREVIEW_W / 2
-			Raster.sprite(
+			R.sprite(
 				cv.surface,
 				frame,
 				if s == 1 then ox else PREVIEW_W - ox,

@@ -301,6 +301,9 @@ M.RunService = RS
 M.images = {}
 local AssetService = {}
 function AssetService:CreateEditableImage(opts)
+	if M.noEditable then
+		error("EditableImage is not available (mock)")
+	end
 	local img = {
 		Size = opts.Size,
 		last = nil,

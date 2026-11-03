@@ -38,6 +38,7 @@ function Stage.new(name: string, screenW: number, screenH: number)
 		weather = data.Weather,
 		floor = data.Floor,
 		sky = Raster.gradient(screenW, screenH, data.Sky),
+		skyStops = data.Sky,
 		layers = layers,
 		w = screenW,
 		h = screenH,
@@ -59,9 +60,14 @@ function Stage.new(name: string, screenW: number, screenH: number)
 	return self
 end
 
-function Stage.drawBack(self: any, s: Raster.Surface, camX: number, shakeX: number, shakeY: number)
+function Stage.drawBack(self: any, s: any, camX: number, shakeX: number, shakeY: number, backend: any?)
+	local R = backend or Raster
 	self.t += 1
-	Raster.copyFrom(s, self.sky)
+	if R.isGui then
+		R.sky(s, self.skyStops)
+	else
+		Raster.copyFrom(s, self.sky)
+	end
 	if self.weather == "storm" then
 		if self.lightning <= 0 and math.random() < 0.006 then
 			self.lightning = 10
@@ -74,7 +80,7 @@ function Stage.drawBack(self: any, s: Raster.Surface, camX: number, shakeX: numb
 			frame = l.frames[(self.t // 10) % #l.frames + 1]
 		end
 		local off = camX * l.parallax + self.t * l.scroll - shakeX
-		Raster.layer(s, frame, off, l.wrap, shakeY * l.parallax)
+		R.layer(s, frame, off, l.wrap, shakeY * l.parallax)
 		if l.name == "Clouds" and self.lightning > 0 then
 			-- lightning strikes behind the far layers
 			if self.lightning > 6 then
@@ -83,7 +89,7 @@ function Stage.drawBack(self: any, s: Raster.Surface, camX: number, shakeX: numb
 				while y < 120 do
 					local nx = x + (math.random() - 0.5) * 16
 					local ny = y + 6 + math.random() * 8
-					Raster.line(s, x, y, nx, ny, white, 2)
+					R.line(s, x, y, nx, ny, white, 2)
 					x, y = nx, ny
 				end
 			end
@@ -91,13 +97,14 @@ function Stage.drawBack(self: any, s: Raster.Surface, camX: number, shakeX: numb
 	end
 	if self.lightning > 0 then
 		if self.lightning > 7 then
-			Raster.whiteout(s, false)
+			R.whiteout(s, false)
 		end
 		self.lightning -= 1
 	end
 end
 
-function Stage.drawFront(self: any, s: Raster.Surface)
+function Stage.drawFront(self: any, s: any, backend: any?)
+	local R = backend or Raster
 	if self.weather == "storm" then
 		local c = Raster.rgb(170, 190, 230)
 		for _, r in self.rain do
@@ -110,7 +117,7 @@ function Stage.drawFront(self: any, s: Raster.Surface)
 			if r.x < 0 then
 				r.x += self.w
 			end
-			Raster.line(s, r.x, r.y, r.x - 1, r.y + 4, c, 1, true)
+			R.line(s, r.x, r.y, r.x - 1, r.y + 4, c, 1, true)
 		end
 	elseif self.weather == "clouds" then
 		local c = Raster.rgb(255, 255, 255)
@@ -119,8 +126,8 @@ function Stage.drawFront(self: any, s: Raster.Surface)
 			if w.x > self.w + 20 then
 				w.x = -20
 			end
-			Raster.disc(s, w.x, w.y + math.sin((self.t + w.x) * 0.02) * 2, 3, c, true)
-			Raster.disc(s, w.x + 5, w.y + 1, 2, c, true)
+			R.disc(s, w.x, w.y + math.sin((self.t + w.x) * 0.02) * 2, 3, c, true)
+			R.disc(s, w.x + 5, w.y + 1, 2, c, true)
 		end
 	end
 end

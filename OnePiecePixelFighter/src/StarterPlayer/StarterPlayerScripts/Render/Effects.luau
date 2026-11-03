@@ -202,7 +202,8 @@ function Effects.update(self: any)
 	end
 end
 
-function Effects.draw(self: any, s: Raster.Surface, camX: number, floor: number)
+function Effects.draw(self: any, s: any, camX: number, floor: number, backend: any?)
+	local R = backend or Raster
 	local function SX(x: number): number
 		return math.floor(x - camX)
 	end
@@ -215,9 +216,9 @@ function Effects.draw(self: any, s: Raster.Surface, camX: number, floor: number)
 		for i = 2, #pts do
 			local a, b = pts[i - 1], pts[i]
 			local th = math.max(1, 4 - b.age // 2)
-			Raster.line(s, SX(a.x), SY(a.y), SX(b.x), SY(b.y), t.color, th, b.age > 3)
+			R.line(s, SX(a.x), SY(a.y), SX(b.x), SY(b.y), t.color, th, b.age > 3)
 			if b.age < 3 then
-				Raster.line(s, SX(a.x), SY(a.y), SX(b.x), SY(b.y), WHITE, 1)
+				R.line(s, SX(a.x), SY(a.y), SX(b.x), SY(b.y), WHITE, 1)
 			end
 		end
 	end
@@ -231,33 +232,33 @@ function Effects.draw(self: any, s: Raster.Surface, camX: number, floor: number)
 			for i = 0, rays - 1 do
 				local a = i / rays * math.pi * 2 + e.x * 0.1
 				local len = size * (if i % 2 == 0 then 1 else 0.6)
-				Raster.line(s, x, y, x + math.cos(a) * len, y + math.sin(a) * len, e.c2, 2)
-				Raster.line(s, x, y, x + math.cos(a) * len * 0.7, y + math.sin(a) * len * 0.7, e.c1, 1)
+				R.line(s, x, y, x + math.cos(a) * len, y + math.sin(a) * len, e.c2, 2)
+				R.line(s, x, y, x + math.cos(a) * len * 0.7, y + math.sin(a) * len * 0.7, e.c1, 1)
 			end
 			if p < 0.4 then
-				Raster.disc(s, x, y, size * 0.35 + 1, e.c1)
+				R.disc(s, x, y, size * 0.35 + 1, e.c1)
 			end
 		elseif k == "slashspark" then
 			local len = e.size * (1 - p * 0.5)
 			local ca, sa = math.cos(e.a), math.sin(e.a)
-			Raster.line(s, x - ca * len, y - sa * len, x + ca * len, y + sa * len, e.c2, 3)
-			Raster.line(s, x - ca * len, y - sa * len, x + ca * len, y + sa * len, e.c1, 1)
-			Raster.line(s, x + sa * len * 0.6, y - ca * len * 0.6, x - sa * len * 0.6, y + ca * len * 0.6, e.c1, 2)
+			R.line(s, x - ca * len, y - sa * len, x + ca * len, y + sa * len, e.c2, 3)
+			R.line(s, x - ca * len, y - sa * len, x + ca * len, y + sa * len, e.c1, 1)
+			R.line(s, x + sa * len * 0.6, y - ca * len * 0.6, x - sa * len * 0.6, y + ca * len * 0.6, e.c1, 2)
 		elseif k == "ring" then
-			Raster.ring(s, x, y, e.size + e.age * (e.grow or 1.5), e.c1, if p < 0.5 then 2 else 1)
+			R.ring(s, x, y, e.size + e.age * (e.grow or 1.5), e.c1, if p < 0.5 then 2 else 1)
 		elseif k == "arc" then
 			for i = -3, 3 do
 				local a = i * 0.32
 				local r = e.size
-				Raster.pixel(s, x - e.facing * math.cos(a) * r, y + math.sin(a) * r, e.c1)
-				Raster.pixel(s, x - e.facing * math.cos(a) * (r + 1), y + math.sin(a) * (r + 1), e.c1)
+				R.pixel(s, x - e.facing * math.cos(a) * r, y + math.sin(a) * r, e.c1)
+				R.pixel(s, x - e.facing * math.cos(a) * (r + 1), y + math.sin(a) * (r + 1), e.c1)
 			end
 		elseif k == "puff" then
 			local r = e.r * (0.7 + p * 0.8)
 			if p < 0.75 or (e.age % 2 == 0) then
-				Raster.disc(s, x, y, r + 1, INK, p > 0.5)
-				Raster.disc(s, x, y, r, e.c2)
-				Raster.disc(s, x - 1, y - 1, math.max(1, r - 1.5), e.c1)
+				R.disc(s, x, y, r + 1, INK, p > 0.5)
+				R.disc(s, x, y, r, e.c2)
+				R.disc(s, x - 1, y - 1, math.max(1, r - 1.5), e.c1)
 			end
 		elseif k == "bolt" then
 			local segs = 6
@@ -267,12 +268,12 @@ function Effects.draw(self: any, s: Raster.Surface, camX: number, floor: number)
 				local t = i / segs
 				local nx = x + (tx - x) * t + (if i < segs then rnd(-5, 5) else 0)
 				local ny = y + (ty - y) * t + (if i < segs then rnd(-5, 5) else 0)
-				Raster.line(s, px, py, nx, ny, e.c2, (e.thick or 1) + 1)
-				Raster.line(s, px, py, nx, ny, e.c1, e.thick or 1)
+				R.line(s, px, py, nx, ny, e.c2, (e.thick or 1) + 1)
+				R.line(s, px, py, nx, ny, e.c1, e.thick or 1)
 				px, py = nx, ny
 			end
 		elseif k == "after" then
-			Raster.ghost(s, e.frame, x, y, e.facing, e.c1, e.age)
+			R.ghost(s, e.frame, x, y, e.facing, e.c1, e.age)
 		elseif k == "spike" then
 			local h = math.floor(28 * math.min(1, e.age / 4) * (if p > 0.7 then (1 - p) / 0.3 else 1))
 			local c1, c2 = Effects.Colors.mochi[1], Effects.Colors.mochi[2]
@@ -282,8 +283,8 @@ function Effects.draw(self: any, s: Raster.Surface, camX: number, floor: number)
 				if hh > 0 then
 					for yy = 0, hh do
 						local w = math.max(0, math.floor((hh - yy) / hh * 4))
-						Raster.rect(s, bx - w - 1, y - yy, w * 2 + 3, 1, INK)
-						Raster.rect(s, bx - w, y - yy, w * 2 + 1, 1, if yy > hh * 0.6 then c1 else c2)
+						R.rect(s, bx - w - 1, y - yy, w * 2 + 3, 1, INK)
+						R.rect(s, bx - w, y - yy, w * 2 + 1, 1, if yy > hh * 0.6 then c1 else c2)
 					end
 				end
 			end

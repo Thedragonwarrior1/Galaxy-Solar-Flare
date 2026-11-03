@@ -20,9 +20,10 @@ local W, H = CombatConfig.ScreenWidth, CombatConfig.ScreenHeight
 
 local SHAKE = { L = 0.6, M = 1.2, H = 2.2, SP = 2.6, SU = 4 }
 
-function Renderer.new(surface: Raster.Surface, stageName: string)
+function Renderer.new(surface: any, stageName: string, backend: any?)
 	local self = setmetatable({
 		s = surface,
+		R = backend or Raster,
 		stage = Stage.new(stageName, W, H),
 		fx = Effects.new(),
 		camX = (CombatConfig.StageWidth - W) / 2,
@@ -314,26 +315,26 @@ function Renderer.drawProjectile(self: any, p: any, view: any, floor: number)
 	local white = rgb(255, 255, 255)
 	if p.kind == "vari" then
 		local c2 = rgb(120, 220, 255)
-		Raster.disc(s, x, y, 7, rgb(40, 60, 140))
-		Raster.disc(s, x, y, 6, c2)
-		Raster.disc(s, x, y, 3 + (p.age % 3), white)
+		self.R.disc(s, x, y, 7, rgb(40, 60, 140))
+		self.R.disc(s, x, y, 6, c2)
+		self.R.disc(s, x, y, 3 + (p.age % 3), white)
 		for _ = 1, 3 do
 			local a = math.random() * math.pi * 2
 			local r = 8 + math.random() * 6
-			Raster.line(s, x, y, x + math.cos(a) * r, y + math.sin(a) * r, c2, 1)
+			self.R.line(s, x, y, x + math.cos(a) * r, y + math.sin(a) * r, c2, 1)
 		end
-		Raster.line(s, x - p.facing * 18, y + math.random(-2, 2), x, y, c2, 2, true)
+		self.R.line(s, x - p.facing * 18, y + math.random(-2, 2), x, y, c2, 2, true)
 	elseif p.kind == "parasite" then
 		local owner = view.fighters[p.owner]
 		local pink = rgb(255, 150, 210)
 		if owner then
 			local hx = owner.x + owner.facing * 24 - self.camX
 			local hy = floor - (owner.y + 70)
-			Raster.line(s, hx, hy, x, y, white, 1)
-			Raster.line(s, hx, hy + 2, x, y + 1, pink, 1, true)
+			self.R.line(s, hx, hy, x, y, white, 1)
+			self.R.line(s, hx, hy + 2, x, y + 1, pink, 1, true)
 		end
-		Raster.line(s, x, y, x - p.facing * 5, y - 4, white, 2)
-		Raster.line(s, x, y, x - p.facing * 5, y + 4, white, 2)
+		self.R.line(s, x, y, x - p.facing * 5, y - 4, white, 2)
+		self.R.line(s, x, y, x - p.facing * 5, y + 4, white, 2)
 	elseif p.kind == "slash" then
 		local green, pale = rgb(110, 230, 120), rgb(230, 255, 230)
 		for k = -10, 10 do
@@ -341,8 +342,8 @@ function Renderer.drawProjectile(self: any, p: any, view: any, floor: number)
 			local ax = x + p.facing * (math.cos(t * 1.2) * 12 - 6)
 			local ay = y + t * 20
 			local th = math.floor(4 * (1 - math.abs(t))) + 1
-			Raster.rect(s, ax - th, ay, th * 2, 1, green)
-			Raster.rect(s, ax - th + 1, ay, math.max(1, th), 1, pale)
+			self.R.rect(s, ax - th, ay, th * 2, 1, green)
+			self.R.rect(s, ax - th + 1, ay, math.max(1, th), 1, pale)
 		end
 	elseif p.kind == "birdcage" then
 		local pink = rgb(255, 150, 210)
@@ -350,11 +351,11 @@ function Renderer.drawProjectile(self: any, p: any, view: any, floor: number)
 		local top = 0
 		for k = 0, 10 do
 			local lx = x0 + (x1 - x0) * k / 10 + math.sin(p.age * 0.3 + k) * 2
-			Raster.line(s, lx, top, lx + (k - 5) * 2, floor, if k % 2 == 0 then white else pink, 1, p.age % 2 == 1)
+			self.R.line(s, lx, top, lx + (k - 5) * 2, floor, if k % 2 == 0 then white else pink, 1, p.age % 2 == 1)
 		end
 		for k = 1, 4 do
 			local ly = floor - (p.age * 4 + k * 40) % p.h
-			Raster.line(s, x0, ly, x1, ly + 6, pink, 1, true)
+			self.R.line(s, x0, ly, x1, ly + 6, pink, 1, true)
 		end
 	elseif p.kind == "elthor" then
 		local c2 = rgb(120, 220, 255)
@@ -362,11 +363,11 @@ function Renderer.drawProjectile(self: any, p: any, view: any, floor: number)
 		if p.age < 3 then
 			self.fx.flash = math.max(self.fx.flash, 2)
 		end
-		Raster.rect(s, x - hw * 0.6, 0, hw * 1.2, floor, c2, true)
-		Raster.rect(s, x - hw * 0.25, 0, hw * 0.5, floor, white)
+		self.R.rect(s, x - hw * 0.6, 0, hw * 1.2, floor, c2, true)
+		self.R.rect(s, x - hw * 0.25, 0, hw * 0.5, floor, white)
 		for _ = 1, 4 do
 			local bx = x + (math.random() - 0.5) * hw * 2
-			Raster.line(s, bx, 0, bx + math.random(-10, 10), floor, c2, 1)
+			self.R.line(s, bx, 0, bx + math.random(-10, 10), floor, c2, 1)
 		end
 		self.fx:dust(p.x, 2, true)
 	end
@@ -395,14 +396,18 @@ function Renderer.draw(self: any, view: any)
 		shy = math.floor((math.random() - 0.5) * fx.shake * 1.4 + 0.5)
 	end
 
-	stage:drawBack(s, camX, shx, shy)
+	local R = self.R
+	if R.begin then
+		R.begin(s)
+	end
+	stage:drawBack(s, camX, shx, shy, R)
 	if view.freeze > 0 or fx.darken > 0 then
-		Raster.darken(s)
+		self.R.darken(s)
 		-- radial speed lines behind the super user
 		local cx, cy = W / 2, H / 2 - 10
 		for k = 0, 23 do
 			local a = k / 24 * math.pi * 2 + self.frameCount * 0.02
-			Raster.line(
+			self.R.line(
 				s,
 				cx + math.cos(a) * 60,
 				cy + math.sin(a) * 60,
@@ -419,11 +424,14 @@ function Renderer.draw(self: any, view: any)
 	for _, f in view.fighters do
 		local sx = f.x - camX + shx
 		local w = math.max(8, 22 - f.y * 0.12)
-		for dx = -w, w do
-			local hh = if math.abs(dx) < w * 0.6 then 1 else 0
-			Raster.blend(s, sx + dx, floor + shy, shadow)
-			if hh == 1 then
-				Raster.blend(s, sx + dx, floor + 1 + shy, shadow)
+		if R.isGui then
+			R.rect(s, sx - w, floor + shy, w * 2 + 1, 2, shadow, true)
+		else
+			for dx = -w, w do
+				Raster.blend(s, sx + dx, floor + shy, shadow)
+				if math.abs(dx) < w * 0.6 then
+					Raster.blend(s, sx + dx, floor + 1 + shy, shadow)
+				end
 			end
 		end
 	end
@@ -446,12 +454,12 @@ function Renderer.draw(self: any, view: any)
 			end
 			local sx, sy = f.x - camX + shx, floor - f.y + shy
 			self:fighterExtras(i, f, cs, frame, row)
-			Raster.sprite(s, frame, sx, sy, f.facing, pal, solid, if solid then cs.flashOutline else nil)
+			self.R.sprite(s, frame, sx, sy, f.facing, pal, solid, if solid then cs.flashOutline else nil)
 			if f.bound then
 				-- Parasite threads hold the victim like a puppet
 				local pink = rgb(255, 150, 210)
 				for k = -2, 2 do
-					Raster.line(s, sx + k * 6, 0, sx + k * 5, sy - 60 + math.abs(k) * 8, pink, 1, true)
+					self.R.line(s, sx + k * 6, 0, sx + k * 5, sy - 60 + math.abs(k) * 8, pink, 1, true)
 				end
 			end
 			if self.hitboxes and row then
@@ -463,10 +471,13 @@ function Renderer.draw(self: any, view: any)
 	for _, p in view.projectiles do
 		self:drawProjectile(p, view, floor)
 	end
-	fx:draw(s, camX - shx, floor + shy)
-	stage:drawFront(s)
+	fx:draw(s, camX - shx, floor + shy, R)
+	stage:drawFront(s, R)
 	if fx.flash > 0 then
-		Raster.whiteout(s, fx.flash > 4)
+		R.whiteout(s, fx.flash > 4)
+	end
+	if R.finish then
+		R.finish(s)
 	end
 	fx:update()
 end
@@ -477,10 +488,10 @@ function Renderer.drawBoxes(self: any, f: any, row: any, camX: number, floor: nu
 	local function box(b: { number }, c: number)
 		local x0 = if f.facing == 1 then f.x + b[1] else f.x - b[1] - b[3]
 		local sx, sy = x0 - camX, floor - (f.y + b[2] + b[4])
-		Raster.rect(s, sx, sy, b[3], 1, c)
-		Raster.rect(s, sx, sy + b[4] - 1, b[3], 1, c)
-		Raster.rect(s, sx, sy, 1, b[4], c)
-		Raster.rect(s, sx + b[3] - 1, sy, 1, b[4], c)
+		self.R.rect(s, sx, sy, b[3], 1, c)
+		self.R.rect(s, sx, sy + b[4] - 1, b[3], 1, c)
+		self.R.rect(s, sx, sy, 1, b[4], c)
+		self.R.rect(s, sx + b[3] - 1, sy, 1, b[4], c)
 	end
 	if not f.invuln then
 		for _, b in row.hurt or {} do

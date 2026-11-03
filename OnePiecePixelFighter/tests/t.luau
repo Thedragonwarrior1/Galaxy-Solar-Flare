@@ -17,6 +17,9 @@ end
 function T.run()
 	local passed = 0
 	for _, t in T.tests do
+		if T.filter and not string.find(t.name, T.filter, 1, true) then
+			continue
+		end
 		local ok, err = pcall(t.fn)
 		if ok then
 			passed += 1
